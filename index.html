@@ -784,6 +784,8 @@ const firebaseConfig = {
   appId: "1:576053214259:web:e47a6c38721d62580fb746"
 };
 
+
+
 // 2. Initialize Firebase
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
@@ -874,6 +876,19 @@ if (!deviceId) {
 }
 
 Lock();
+
+// Madam ki app ke liye auto-refresh listener
+db.ref('shared_stock_list').on('value', (snapshot) => {
+    const onlineData = snapshot.val();
+    if (onlineData) {
+        stock = onlineData; // Global stock array update karein
+        renderStock();      // Screen refresh karein
+        localStorage.setItem('ash_stock', JSON.stringify(stock));
+    }
+});
+
+
+
 
 // --- Share Panel Update (Device ID Dikhane ke liye) ---
 
@@ -1467,23 +1482,19 @@ function closeInputModalDirectly() {
 function submitInputModal() {
     let name = document.getElementById('inp1').value.trim();
     let priceInput = document.getElementById('inp2').value.trim();
-    let baseInput = document.getElementById('inpBase').value.trim(); // Quantity field
+    let baseInput = document.getElementById('inpBase').value.trim();
 
-    // 1. Name Validation
     if (!name) {
         showToast("Please enter a name!", true);
         return;
     }
 
     if (mode === 'stock') {
-        // 2. Price Validation (Khali nahi hona chahiye)
         if (priceInput === "" || isNaN(priceInput)) {
             showToast("Please enter a valid price!", true);
             return;
         }
 
-        // 3. Quantity (Base) Validation - NEW
-        // Agar quantity khali hai ya 0 se kam hai
         if (baseInput === "" || isNaN(baseInput) || parseFloat(baseInput) <= 0) {
             showToast("Please enter a valid quantity!", true);
             return;
@@ -1495,22 +1506,25 @@ function submitInputModal() {
             return;
         }
         
-
-let item = {
-    name: name,
-    price: parseFloat(priceInput) || 0,
-    // CHANGE: Dono ko 1000 kar dein Grams system ke liye
-    base: parseFloat(baseInput) || 1000, 
-    total: parseFloat(baseInput) || 1000,
-    img: tempImg
-};
+        let item = {
+            name: name,
+            price: parseFloat(priceInput) || 0,
+            base: parseFloat(baseInput) || 1000, 
+            total: parseFloat(baseInput) || 1000,
+            img: tempImg
+        };
 
         if (activeIdx !== null) stock[activeIdx] = item;
         else stock.push(item);
         
+        // --- ADD THIS FOR ONLINE SYNC ---
+        if (typeof db !== 'undefined') {
+            db.ref('shared_stock_list').set(stock);
+        }
+        
         showToast("Item saved successfully");
+
     } else {
-        // --- RECIPE SAVING LOGIC ---
         let cat = document.getElementById('recipeCatSelect').value;
         if (!cat || cat === "" || cat === "No Category") {
             showToast("Please select a Category first!", true);
@@ -1535,6 +1549,11 @@ let item = {
 
         if (activeIdx !== null) recipes[activeIdx] = recipeData;
         else recipes.push(recipeData);
+
+        // --- ADD THIS FOR ONLINE SYNC ---
+        if (typeof db !== 'undefined') {
+            db.ref('shared_recipes_list').set(recipes);
+        }
 
         showToast("Recipe created successfully");
     }
@@ -1568,21 +1587,29 @@ function renderRecipes() {
         </div>`}).join('');
 }
 
+
+
 function renderStock() {
     const list = document.getElementById('stockList');
-    list.innerHTML = stock.map((s, i) => `
-        <div class="row-item" style="grid-template-columns: 1fr auto; padding: 12px; margin-bottom: 8px; background: #fff; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    if (!list) return; // Error se bachne ke liye
+
+    list.innerHTML = stock.map((s, i) => {
+        // Safety check: Agar price nahi hai toh 0 dikhao
+        const itemPrice = (s.price && !isNaN(s.price)) ? s.price : 0;
+        const itemBase = s.base || 1000;
+
+        return `
+        <div class="row-item" style="grid-template-columns: 1fr auto; padding: 12px; border-bottom: 1px solid #eee;">
             <div>
-                <b style="font-size: 14px; color: #1e293b;">${s.name}</b><br>
-                <small style="color: #64748b;">${s.price.toFixed(3)} OMR / ${s.unit}</small>
+                <b style="font-size:14px;">${s.name || 'No Name'}</b><br>
+                <small style="color:#666;">${itemPrice.toFixed(3)} OMR / ${itemBase}g</small>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" 
-                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
-                <i class="fas fa-trash" style="color:#ff4757; font-size:16px; cursor:pointer;" 
-                   onclick="event.stopPropagation(); deleteStockItem(${i})"></i>
+                <i class="fas fa-edit" style="color:#38bdf8;" onclick="openInputModal('stock', ${i})"></i>
+                <i class="fas fa-trash" style="color:#f43f5e;" onclick="deleteStockItem(${i})"></i>
             </div>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 
@@ -2391,9 +2418,10 @@ function openSharePanel() {
 }
 
 // --- Stock Save Function with Firebase Sync ---
+
 function saveStock() {
-    const name = document.getElementById('inp1').value; // Aapke modal ka ID inp1 hai
-    const price = parseFloat(document.getElementById('inp2').value) || 0;
+    const name = document.getElementById('inp1').value; // Item Name input ID
+    const price = parseFloat(document.getElementById('inp2').value) || 0; // Price input ID
     const unit = document.getElementById('itemUnit') ? document.getElementById('itemUnit').value : 'unit';
 
     if (!name) {
@@ -2403,29 +2431,29 @@ function saveStock() {
 
     const newItem = { name, price, unit };
 
-    // Agar edit kar rahe hain
+    // Check if editing or adding new
     if (typeof editIdx !== 'undefined' && editIdx !== null) {
         stock[editIdx] = newItem;
         showToast("Stock Updated");
     } else {
-        // Naya item add kar rahe hain
         stock.push(newItem);
         showToast("Item Added to Stock");
     }
 
-    // 1. Local storage mein save karein
+    // 1. Local storage update
     localStorage.setItem('ash_stock', JSON.stringify(stock));
     
-    // 2. Firebase par upload karein (Madam ki app ke liye)
+    // 2. FIREBASE SYNC (Isse online dikhega)
     if (typeof db !== 'undefined') {
         db.ref('shared_stock_list').set(stock)
-          .then(() => console.log("Synced to Madam App"))
-          .catch((err) => console.error("Firebase Sync Error", err));
+          .then(() => console.log("Synced Online"))
+          .catch((err) => console.error("Firebase Error:", err));
     }
 
-    closeModal(); // Modal band karne ke liye
-    renderStock(); // List refresh karne ke liye
+    closeModal();
+    renderStock();
 }
+
 
 // Madam ki app mein automatically update hone ke liye ye listener bhi zaroori hai
 if (typeof db !== 'undefined') {
@@ -2503,6 +2531,28 @@ function showImageOptions(index, type) {
     
     document.body.insertAdjacentHTML('afterbegin', photoHtml);
 }
+
+
+// Firebase data listener
+db.ref('shared_stock_list').on('value', (snapshot) => {
+    const onlineData = snapshot.val();
+    if (onlineData) {
+        // Variable update karein
+        stock = onlineData; 
+        
+        // Sabse zaroori: Screen ko refresh karein
+        renderStock(); 
+        
+        // LocalStorage update karein taaki offline bhi chale
+        localStorage.setItem('ash_stock', JSON.stringify(stock));
+        
+        console.log("Mobile Screen Updated from Firebase!");
+    }
+}, (error) => {
+    console.error("Sync Error: ", error);
+});
+
+
 
     </script>
     
