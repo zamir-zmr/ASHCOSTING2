@@ -1725,6 +1725,9 @@ function toggleManage() {
 }
 
 
+
+
+// --- 1. RENDER STOCK (Triggers aur StopPropagation ke saath) ---
 function renderStock() {
     const list = document.getElementById('stockList');
     if (!list) return;
@@ -1734,19 +1737,98 @@ function renderStock() {
         const itemBase = s.base || 1000;
 
         return `
-        <div class="row-item" style="display: grid; grid-template-columns: 1fr auto; padding: 15px; border-bottom: 1px solid #f1f2f6; align-items: center;">
+        <div class="row-item" 
+             style="display: grid; grid-template-columns: 1fr auto; padding: 15px; border-bottom: 1px solid #f1f2f6; align-items: center;"
+             /* LONG PRESS TRIGGERS YAHAN ADD KIYE HAIN */
+             ontouchstart="startLongPress(${i})" 
+             ontouchend="cancelLongPress()" 
+             onmousedown="startLongPress(${i})" 
+             onmouseup="cancelLongPress()">
+            
             <div>
                 <b style="font-size:15px; color:#2d3436;">${s.name || 'No Name'}</b><br>
                 <small style="color:#00b894; font-weight:600;">${itemPrice.toFixed(3)} OMR / ${itemBase}g</small>
             </div>
+            
             <div style="display:flex; gap:5px; align-items:center;">
-                <i class="fas fa-edit" style="color:#38bdf8; font-size:17px; cursor:pointer; padding:5px;" onclick="openInputModal('stock', ${i})"></i>
-                <i class="fas fa-trash" style="color:#f43f5e; font-size:17px; cursor:pointer; padding:5px;" onclick="activeIdx=${i}; mode='stock'; handleDeleteAction();"></i>
+
+                <i class="fas fa-edit" style="color:#38bdf8; font-size:17px; cursor:pointer; padding:5px;" 
+                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
+                
+                <i class="fas fa-trash" style="color:#f43f5e; font-size:17px; cursor:pointer; padding:5px;" 
+                   onclick="event.stopPropagation(); activeIdx=${i}; mode='stock'; handleDeleteAction();"></i>
             </div>
         </div>`;
     }).join('');
 }
 
+// --- 2. LONG PRESS LOGIC (Aapka Code + Back Button Fix) ---
+
+
+function startLongPress(i) {
+    // 600ms tak daba ke rakhne par popup aayega
+    longPressTimer = setTimeout(() => {
+        let s = stock[i];
+        
+        // Modal mein details bharna
+        document.getElementById('stockViewName').innerText = s.name || "No Name";
+        document.getElementById('stockViewPrice').innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
+        
+        let img = document.getElementById('stockViewImg');
+        if(s.img) { 
+            img.src = s.img; 
+            img.style.display = 'block'; 
+        } else { 
+            img.style.display = 'none'; 
+        }
+
+        // --- BACK BUTTON FIX ---
+        // Isse mobile ka back button dabane par sirf photo band hogi, app home par nahi jayega
+        history.pushState({modal: "view"}, "");
+        document.getElementById('stockViewModal').style.display = 'flex';
+        
+        // Haptic Feedback (Vibration)
+        if(navigator.vibrate) navigator.vibrate(50);
+    }, 600);
+}
+
+function cancelLongPress() { 
+    clearTimeout(longPressTimer); 
+}
+
+// --- 3. DELETE ACTION (Firebase Online Sync ke saath) ---
+function handleDeleteAction() {
+    showCustomModal({
+        title: "Delete Confirmation",
+        msg: "Kya aap ise hamesha ke liye delete karna chahte hain?",
+        onYes: () => {
+            if(mode === 'stock') {
+                stock.splice(activeIdx, 1);
+                
+                // --- FIREBASE SYNC (Last Item Delete Formula) ---
+                if (typeof db !== 'undefined') {
+                    // Agar array 0 hai toh [] bhejo taaki Firebase puri tarah saaf ho jaye
+                    let syncData = (stock.length === 0) ? [] : stock;
+                    db.ref('shared_stock_list').set(syncData);
+                }
+            }
+            
+            saveData(); 
+            
+            // UI Refresh: Aap stock layout mein hi rahenge
+            if(typeof initApp === "function") initApp();
+            else renderStock();
+
+            // Modals band karein
+            if(document.getElementById('inputModalOverlay')) {
+                document.getElementById('inputModalOverlay').style.display = 'none';
+            }
+            if(typeof smartClose === "function") smartClose(); 
+            
+            showToast("Permanently Deleted Online", "error");
+        }
+    });
+}
 
 
 
@@ -1989,19 +2071,6 @@ function updatePreview() {
     document.getElementById('modalImgDel').style.display = tempImg ? 'flex' : 'none';
 }
 
-function startLongPress(i) {
-    longPressTimer = setTimeout(() => {
-        let s = stock[i];
-        document.getElementById('stockViewName').innerText = s.name;
-        document.getElementById('stockViewPrice').innerText = s.price.toFixed(3) + " OMR";
-        let img = document.getElementById('stockViewImg');
-        if(s.img) { img.src = s.img; img.style.display = 'block'; } else { img.style.display='none'; }
-        history.pushState({modal: "view"}, "");
-        document.getElementById('stockViewModal').style.display = 'flex';
-    }, 600);
-}
-
-        function cancelLongPress() { clearTimeout(longPressTimer); }
         function handleDeleteAction() {
 
 }
