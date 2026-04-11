@@ -1316,17 +1316,38 @@ function editCategory(i) {
 }
 
 // Category Delete Function mein bhi Firebase add kiya
+
+// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
+
+// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
 function deleteCat(i) {
-    if(confirm("Delete this category?")) {
-        cats.splice(i, 1);
-        
-        // --- FIREBASE SYNC (Delete) ---
-        db.ref('shared_categories').set(cats);
-        
-        saveData();
-        renderCatFilters();
-        showToast("Deleted Online", "error");
-    }
+    showCustomModal({
+        title: "Delete Category?",
+        msg: `Are you sure you want to delete '${cats[i]}'? This will not delete the recipes inside it.`,
+        showInput: false,
+        onYes: () => {
+            // 1. Pehle local array se delete karein
+            cats.splice(i, 1);
+            
+            // 2. FIREBASE PAR UPDATED LIST BHEJEIN (Ye line Madam ke phone se delete karegi)
+            if (typeof db !== 'undefined') {
+                db.ref('shared_categories').set(cats)
+                .then(() => {
+                    showToast("Category Deleted Online", "error");
+                })
+                .catch((err) => {
+                    console.error("Firebase Sync Error:", err);
+                });
+            }
+            
+            // 3. Local data save aur UI refresh karein
+            saveData(); 
+            renderCatFilters();
+            
+            // Modal band karein
+            if (typeof smartClose === "function") smartClose();
+        }
+    });
 }
 
 
