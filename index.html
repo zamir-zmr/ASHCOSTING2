@@ -1350,6 +1350,10 @@ function deleteCat(i) {
 // 1. Toggle Manage Function - Jo EXIT button aur Manage mode ko handle karta hai
 
 // --- 1. NAVIGATION & MANAGE MODE ---
+// --- 1. TOGGLE MANAGE (Line by Line) ---
+// --- 1. TOGGLE MANAGE (Line by Line) ---
+// 1. TOGGLE MANAGE (Line by Line with Firebase Refresh)
+// --- 1. TOGGLE MANAGE (Line by Line) ---
 function toggleManage() {
     isManage = !isManage;
     const b = document.getElementById('mBtn');
@@ -1361,8 +1365,7 @@ function toggleManage() {
     if(!isManage) {
         document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
         document.getElementById('homeCont').style.display = 'block';
-        // EXIT karte hi ek baar refresh karein taaki latest online data dikhe
-        initApp(); 
+        if(typeof initApp === "function") initApp();
     }
 }
 
@@ -1375,26 +1378,21 @@ function openPanel(id) {
 function closePanel(id) { history.back(); }
 function smartClose() { history.back(); }
 
-// --- 3. MOBILE BACK BUTTON FIX (Firebase Safe) ---
+// --- 3. MOBILE BACK BUTTON FIX ---
 window.onpopstate = function(event) {
-    // Saare UI overlays band karein
     document.querySelectorAll('.panel, .modal-overlay').forEach(el => el.style.display = 'none');
-    
     isManage = false;
     const b = document.getElementById('mBtn');
     if(b) {
         b.innerText = "MANAGE";
         b.classList.remove('active');
     }
-    
     const homeCont = document.getElementById('homeCont');
     if(homeCont) {
         homeCont.classList.remove('manage-mode');
         homeCont.style.display = 'block';
     }
-
-    // FIREBASE SYNC: Back button dabane par local data refresh karein
-    initApp(); 
+    if(typeof initApp === "function") initApp(); 
 
     if (event.state && event.state.panel) {
         let panel = document.getElementById(event.state.panel);
@@ -1402,7 +1400,7 @@ window.onpopstate = function(event) {
     }
 };
 
-// --- 4. INPUT MODAL (Firebase Data Support) ---
+// --- 4. INPUT MODAL (Name & Category Fix) ---
 function openInputModal(type, idx = null) {
     mode = type; 
     activeIdx = idx;
@@ -1411,7 +1409,6 @@ function openInputModal(type, idx = null) {
     document.getElementById('inputModalOverlay').style.display = 'flex';
     document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
     
-    // Dynamic UI Setup
     if (type === 'stock') {
         document.getElementById('inputModalTitle').innerText = "Item Details";
         document.getElementById('priceWrapper').style.display = 'block';
@@ -1422,36 +1419,108 @@ function openInputModal(type, idx = null) {
         document.getElementById('priceWrapper').style.display = 'none';
         document.getElementById('baseWrapper').style.display = 'none';
         document.getElementById('catSelectSection').style.display = 'block';
-        
-        // Ensure Categories are synced before showing dropdown
-        refreshOtherUI(); 
     }
 
-    // Load Data from Firebase-synced Arrays
     if(idx !== null) {
         let d = (type === 'recipe') ? recipes[idx] : stock[idx];
-        if (!d) return; // Safety check
-
-        document.getElementById('inp1').value = d.name;
-        if(type === 'stock') {
-            document.getElementById('inp2').value = d.price || "";
-            document.getElementById('inpBase').value = d.base || 1000;
-        } else {
-            document.getElementById('recipeCatSelect').value = d.category || "";
+        if(d) {
+            document.getElementById('inp1').value = d.name || "";
+            if(type === 'stock') {
+                document.getElementById('inp2').value = d.price || "";
+                document.getElementById('inpBase').value = d.base || 1000;
+            } else {
+                document.getElementById('recipeCatSelect').value = d.category || "";
+            }
+            tempImg = d.img || "";
         }
-        tempImg = d.img || "";
     } else {
         document.getElementById('inp1').value = ""; 
         document.getElementById('inp2').value = ""; 
-        document.getElementById('inpBase').value = "1000"; // Default base
+        document.getElementById('inpBase').value = "1000"; 
+        document.getElementById('recipeCatSelect').value = "";
         tempImg = "";
     }
     updatePreview();
 }
 
+// --- 5. SUGGESTION & ADDING LOGIC (FIXED FOR SELECTION) ---
+
+function showSuggest(q) {
+    const suggDiv = document.getElementById('suggestions');
+    if(!q || !suggDiv) { 
+        if(suggDiv) suggDiv.innerHTML = ''; 
+        return; 
+    }
+    
+    let fits = stock.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
+    
+    suggDiv.innerHTML = fits.map(f => {
+        let b = f.base || 1000; 
+        // Single quote escape kiya taaki selection break na ho
+        let safeName = f.name.replace(/'/g, "\\'");
+        return `
+            <div style="padding:15px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer; background:#fff; color:#2d3436;" 
+                 onclick="addIng('${safeName}', ${f.price}, ${b})"> 
+                ${f.name} 
+                <span style="float:right; color:#00D2D3;">
+                    ${f.price.toFixed(3)} OMR / ${b}G
+                </span>
+            </div>`;
+    }).join('');
+}
+
+function addIng(n, p, b) {
+    // Check karein ki koi recipe khuli hai ya nahi
+    if (activeIdx === null || activeIdx === undefined) {
+        alert("Please open a recipe first");
+        return;
+    }
+    
+    let currentRecipe = recipes[activeIdx];
+    if(!currentRecipe.items) currentRecipe.items = [];
+    
+    // Naya item object
+    let newItem = { 
+        name: n, 
+        price: parseFloat(p) || 0, 
+        total: parseFloat(b) || 1000, 
+        used: 0 
+    };
+
+    currentRecipe.items.push(newItem);
+
+    // 1. Search input saaf karein
+    const sInp = document.getElementById('ingSearchInput'); // Ensure id is correct in HTML
+    if(sInp) sInp.value = '';
+    
+    // 2. Suggestions chhupayein
+    const suggDiv = document.getElementById('suggestions');
+    if(suggDiv) suggDiv.innerHTML = ''; 
+    
+    // 3. Firebase aur Local save
+    saveData();
+    syncToFirebase();
+    
+    // 4. UI Update karein taaki naya item list mein dikhe
+    if(typeof renderTable === "function") renderTable(); 
+}
+
+// --- 6. MASTER FIREBASE SYNC ---
+function syncToFirebase() {
+    if(typeof db !== 'undefined') {
+        db.ref('shared_stock_list').set(stock);
+        db.ref('shared_recipes_list').set(recipes);
+        db.ref('shared_categories').set(cats);
+        console.log("Cloud Updated!");
+    }
+}
+
 function closeInputModalDirectly() {
+    syncToFirebase();
     history.back();
 }
+
+
 
 // --- 5. FIREBASE SYNC HELPER (Har save ke baad ise call karein) ---
 function syncWithFirebase() {
@@ -1608,7 +1677,7 @@ function renderStock() {
 
 
         /* --- CALCULATIONS --- */
-   function openEditor(i) {
+function openEditor(i) {
     activeIdx = i; 
     let r = recipes[i];
     history.pushState({modal: "editor"}, "");
@@ -1630,6 +1699,7 @@ function renderTable() {
         
         if(latestItem) {
             it.price = latestItem.price;
+            // CHANGE: Fallback changed from 1000 to 1 as per your previous requirement
             it.total = latestItem.base || it.total || 1000;
         }
 
@@ -1663,7 +1733,8 @@ function renderTable() {
 // Naya Function: Jo row delete karega aur Firebase update karega
 function removeIng(i) {
     recipes[activeIdx].items.splice(i, 1);
-    db.ref('shared_recipes_list').set(recipes); // Firebase Sync
+    // Firebase Sync
+    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
     saveData();
     renderTable();
 }
@@ -1681,7 +1752,8 @@ function initDragLogic() {
             const movedItem = items.splice(evt.oldIndex, 1)[0];
             items.splice(evt.newIndex, 0, movedItem);
             
-            db.ref('shared_recipes_list').set(recipes); // Firebase Sync Order
+            // Firebase Sync Order change hone par
+            if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
             saveData();
             calcTotal(); 
         }
@@ -1738,9 +1810,9 @@ function showSuggest(q) {
         let b = f.base || 1000; 
         return `
             <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;" 
-                 onclick="addIng('${f.name}', ${f.price}, ${b})"> 
+                 onclick="addIng('${f.name.replace(/'/g, "\\'")}', ${f.price}, ${b})"> 
                 ${f.name} 
-                <span style="float:right; color:var(--primary)">
+                <span style="float:right; color:#00D2D3;">
                     ${f.price.toFixed(3)} OMR / ${b} G
                 </span>
             </div>`;
@@ -1749,6 +1821,8 @@ function showSuggest(q) {
 
 function addIng(n, p, b) {
     let finalBase = b || 1000;
+    if(!recipes[activeIdx].items) recipes[activeIdx].items = [];
+    
     recipes[activeIdx].items.push({ 
         name: n, 
         price: p, 
@@ -1756,7 +1830,9 @@ function addIng(n, p, b) {
         used: 0 
     });
 
-    db.ref('shared_recipes_list').set(recipes); // Firebase Sync New Ingredient
+    // Firebase Sync New Ingredient add hone par
+    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
+
     let sInp = document.querySelector('#editorPanel input[oninput*="showSuggest"]');
     if(sInp) sInp.value = '';
     document.getElementById('suggestions').innerHTML = ''; 
@@ -1765,7 +1841,8 @@ function addIng(n, p, b) {
 }
 
 function saveAndExit() { 
-    db.ref('shared_recipes_list').set(recipes); // Final Firebase Sync
+    // Final Firebase Sync jab user modal band kare
+    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
     saveData(); 
     smartClose(); 
 }
