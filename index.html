@@ -1349,67 +1349,60 @@ function deleteCat(i) {
 
 // 1. Toggle Manage Function - Jo EXIT button aur Manage mode ko handle karta hai
 
+// --- 1. NAVIGATION & MANAGE MODE ---
 function toggleManage() {
     isManage = !isManage;
     const b = document.getElementById('mBtn');
     
-    // UI update
     b.innerText = isManage ? "EXIT" : "MANAGE";
     b.classList.toggle('active', isManage);
     document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
 
-    // Agar EXIT dabaya (isManage false hua), toh screens reset karo
     if(!isManage) {
-        // Sabhi khule huye panels ko hide karo
         document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-        // Home screen dikhao
         document.getElementById('homeCont').style.display = 'block';
+        // EXIT karte hi ek baar refresh karein taaki latest online data dikhe
+        initApp(); 
     }
 }
 
-
-
-// 2. Panel Functions - History support ke saath
+// --- 2. PANEL FUNCTIONS ---
 function openPanel(id) { 
     history.pushState({panel: id}, ""); 
     document.getElementById(id).style.display = 'flex'; 
 }
 
-function closePanel(id) { 
-    history.back(); 
-}
+function closePanel(id) { history.back(); }
+function smartClose() { history.back(); }
 
-function smartClose() { 
-    history.back(); 
-}
-
-// 3. MOBILE BACK BUTTON FIX (Sabse Important)
+// --- 3. MOBILE BACK BUTTON FIX (Firebase Safe) ---
 window.onpopstate = function(event) {
-    // A. Saare Modals aur Panels ko band karo
+    // Saare UI overlays band karein
     document.querySelectorAll('.panel, .modal-overlay').forEach(el => el.style.display = 'none');
     
-    // B. Manage Mode ko RESET karo (Mobile back dabane par EXIT apne aap MANAGE ban jaye)
     isManage = false;
     const b = document.getElementById('mBtn');
     if(b) {
         b.innerText = "MANAGE";
         b.classList.remove('active');
     }
+    
     const homeCont = document.getElementById('homeCont');
     if(homeCont) {
         homeCont.classList.remove('manage-mode');
-        homeCont.style.display = 'block'; // Home screen wapas dikhao
+        homeCont.style.display = 'block';
     }
-    
-    // C. Agar history mein koi panel hai toh use wapas dikhao
+
+    // FIREBASE SYNC: Back button dabane par local data refresh karein
+    initApp(); 
+
     if (event.state && event.state.panel) {
         let panel = document.getElementById(event.state.panel);
         if (panel) panel.style.display = 'flex';
     }
 };
 
-// 4. Input Modal Functions
-
+// --- 4. INPUT MODAL (Firebase Data Support) ---
 function openInputModal(type, idx = null) {
     mode = type; 
     activeIdx = idx;
@@ -1418,7 +1411,7 @@ function openInputModal(type, idx = null) {
     document.getElementById('inputModalOverlay').style.display = 'flex';
     document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
     
-    // Set Dynamic Titles and visibility
+    // Dynamic UI Setup
     if (type === 'stock') {
         document.getElementById('inputModalTitle').innerText = "Item Details";
         document.getElementById('priceWrapper').style.display = 'block';
@@ -1429,42 +1422,55 @@ function openInputModal(type, idx = null) {
         document.getElementById('priceWrapper').style.display = 'none';
         document.getElementById('baseWrapper').style.display = 'none';
         document.getElementById('catSelectSection').style.display = 'block';
+        
+        // Ensure Categories are synced before showing dropdown
+        refreshOtherUI(); 
     }
 
-    // Load Data
+    // Load Data from Firebase-synced Arrays
     if(idx !== null) {
         let d = (type === 'recipe') ? recipes[idx] : stock[idx];
+        if (!d) return; // Safety check
+
         document.getElementById('inp1').value = d.name;
         if(type === 'stock') {
             document.getElementById('inp2').value = d.price || "";
-            // Agar pehle se saved base hai toh wo dikhao, nahi toh 1000
             document.getElementById('inpBase').value = d.base || 1000;
         } else {
             document.getElementById('recipeCatSelect').value = d.category || "";
         }
         tempImg = d.img || "";
     } else {
-        // NAYA ITEM BANANE KE LIYE:
         document.getElementById('inp1').value = ""; 
         document.getElementById('inp2').value = ""; 
-        // CHANGE: "" ki jagah "1000" likha taaki user ka kaam asaan ho jaye
-        document.getElementById('inpBase').value = ""; 
+        document.getElementById('inpBase').value = "1000"; // Default base
         tempImg = "";
     }
     updatePreview();
 }
 
-
-
-// 1. Modal band karne ka function
 function closeInputModalDirectly() {
-    // Direct band karne ke liye history back call karein 
     history.back();
 }
+
+// --- 5. FIREBASE SYNC HELPER (Har save ke baad ise call karein) ---
+function syncWithFirebase() {
+    if (typeof db === 'undefined') return;
+
+    if (mode === 'stock') {
+        db.ref('shared_stock_list').set(stock);
+    } else if (mode === 'recipe') {
+        db.ref('shared_recipes_list').set(recipes);
+    }
+    // Categories sync already deleteCat/addCategory mein handle ho chuka hai
+}
+
 
 // 2. Data save karne ka main function (SIRF EK RAKHEIN)
 
 
+
+/// stockList ke liye
 function submitInputModal() {
     let name = document.getElementById('inp1').value.trim();
     let priceInput = document.getElementById('inp2').value.trim();
