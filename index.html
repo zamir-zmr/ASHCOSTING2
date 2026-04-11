@@ -2023,39 +2023,79 @@ function handleDeleteAction() {
         }
     });
 }
+// --- 1. HANDLE DELETE ACTION (Fixed for Last Item & Firebase Sync) ---
+function handleDeleteAction() {
+    showCustomModal({
+        title: "Deletion Confirmation",
+        msg: "Are you sure you want to delete it permanently?",
+        showInput: false,
+        onYes: () => {
+            if(mode === 'recipe') {
+                // Local array se item nikalein
+                recipes.splice(activeIdx, 1);
+                
+                // --- FIREBASE SYNC FORMULA ---
+                if (typeof db !== 'undefined') {
+                    // Agar array 0 ho jaye toh Firebase ko khali array [] force karein
+                    let finalData = (recipes.length === 0) ? [] : recipes;
+                    db.ref('shared_recipes_list').set(finalData)
+                      .then(() => console.log("Recipe Deleted Successfully"))
+                      .catch(err => console.error("Firebase Error:", err));
+                }
+            } else {
+                // Stock item delete karein
+                stock.splice(activeIdx, 1);
+                
+                // --- FIREBASE SYNC FORMULA ---
+                if (typeof db !== 'undefined') {
+                    let finalStock = (stock.length === 0) ? [] : stock;
+                    db.ref('shared_stock_list').set(finalStock);
+                }
+            }
+            
+            // Local storage update karein
+            saveData(); 
+            
+            // UI REFRESH: Screen se card hatane ke liye
+            if (typeof initApp === "function") {
+                initApp(); 
+            }
+            
+            // Modals band karein
+            document.getElementById('inputModalOverlay').style.display = 'none';
+            if (typeof smartClose === "function") smartClose(); 
+            
+            showToast("Permanently Deleted Online", "error");
+        }
+    });
+}
 
-// --- 2. DELETE CATEGORY (Formula with Empty Array Safety) ---
+// --- 2. DELETE CATEGORY (Same Formula for Categories) ---
 function deleteCat(i) {
     showCustomModal({
         title: "DELETE CATEGORY?",
-        msg: "Deleting this category will not delete the recipes, but will remove their category tag.",
+        msg: "Deleting this category will not delete the recipes.",
         showInput: false,
         onYes: () => {
-            // 1. Local list se delete
             cats.splice(i, 1);
 
-            // 2. --- FIREBASE SYNC FORMULA ---
             if (typeof db !== 'undefined') {
-                // Last category delete hone par empty array handle karein
+                // Last category delete hone par [] bhejien
                 let catSync = (cats.length === 0) ? [] : cats;
                 db.ref('shared_categories').set(catSync)
                   .then(() => {
                       showToast("Category Deleted Online", "error");
-                      // Sabhi items ko naye data ke saath refresh karein
                       if(typeof initApp === "function") initApp();
-                  })
-                  .catch(err => console.error("Firebase Sync Error:", err));
+                  });
             }
 
-            // 3. Local storage update
             saveData();
             if(typeof renderCatFilters === "function") renderCatFilters();
-            
-            // Modal band karein
             if(typeof smartClose === "function") smartClose();
         }
     });
 }
+
 
 // --- 3. MODAL CONFIRMATION HANDLER ---
 // Ye line aapke modal confirmation ko handle karegi
