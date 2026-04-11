@@ -401,6 +401,8 @@
 }
 
 
+
+
 /* Line 226 se replace karein */
 .panel { 
     position: fixed; 
@@ -1207,7 +1209,10 @@ function uploadAppLogo(input) {
         
 
         /* --- CATEGORY LOGIC --- */
+
+
 function renderCatFilters() {
+    // Top bar aur dropdown ka logic (Aapka existing code)
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
     cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
     document.getElementById('catFilterBar').innerHTML = html;
@@ -1216,19 +1221,29 @@ function renderCatFilters() {
     cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
     document.getElementById('recipeCatSelect').innerHTML = drop;
 
+    // Category Manager List (Full Row Draggable Design)
     document.getElementById('catManagerList').innerHTML = cats.map((c, i) => `
     <div class="draggable-item" data-name="${c}" style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; touch-action: pan-y;">
+        
         <div style="display:flex; align-items:center; flex:1;">
+
             <b class="cat-name-text" style="color:var(--accent)">${c}</b>
         </div>
+
         <div style="display:flex; gap:15px; align-items:center;">
             <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); editCategory(${i})"></i>
+            
             <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); deleteCat(${i})"></i>
         </div>
     </div>`).join('');
 
+
+    // --- YE LINE FIX KAREGI ---
+    // Naya category bante hi Sortable ko re-initialize karega
     setTimeout(initCatSortable, 200); 
 }
+
+// Naya Function: Jo order save karega
 
 function initCatSortable() {
     let el = document.getElementById('catManagerList');
@@ -1238,9 +1253,9 @@ function initCatSortable() {
 
     el.sortableInstance = Sortable.create(el, {
         animation: 150,
-        delay: 500,
-        delayOnTouchOnly: true,
-        touchStartThreshold: 5,
+        delay: 500,             // 0.5 second ka long press
+        delayOnTouchOnly: true, // Sirf mobile touch par delay hoga
+        touchStartThreshold: 5, // 5px tak ungli hilegi toh cancel nahi hoga
         ghostClass: 'sortable-ghost',
         onEnd: function() {
             let newOrder = [];
@@ -1248,42 +1263,71 @@ function initCatSortable() {
                 newOrder.push(item.innerText.trim());
             });
             cats = newOrder;
-
-            // --- FIREBASE SYNC (Order Change) ---
-            db.ref('shared_categories').set(cats);
-
             saveData();
-            refreshOtherUI();
-            showToast("Order Saved Online");
+            refreshOtherUI(); // Top bar refresh
+            showToast("Saved");
         }
     });
 }
 
+
+// Sirf top bar refresh karne ke liye naya function
+function refreshTopFilters() {
+    let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
+    cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
+    document.getElementById('catFilterBar').innerHTML = html;
+}
+
+
+function refreshOtherUI() {
+    // Top bar filters update
+    let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
+    cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
+    document.getElementById('catFilterBar').innerHTML = html;
+    
+    // Recipe dropdown update
+    let drop = `<option value="">No Category</option>`;
+    cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
+    document.getElementById('recipeCatSelect').innerHTML = drop;
+}
+
+
+
+        function filterBy(c) { currentFilter = c; renderRecipes(); renderCatFilters(); }
+        
+        
+        
 function addCategory() {
     let val = document.getElementById('newCatInp').value.trim();
+    
+    // 1. Khali input 
     if(!val) {
         showToast("Please enter a category name!", true);
         return;
     }
 
+    // 2. Duplicate 
     let exists = cats.find(c => c.toLowerCase() === val.toLowerCase());
+
     if(exists) {
-        showToast(`'${val}' already exists in Category`, true);
+        // Agar pehle se hai, toh message dikhao aur wahi ruk jao
+        showToast(`'${val}'  already exists in Category`, true);
         return; 
     }
 
+    // 3. Naya add karo agar upar wali conditions fail ho gayi
     cats.push(val); 
     document.getElementById('newCatInp').value = ''; 
-
-    // --- FIREBASE SYNC (New Category) ---
-    db.ref('shared_categories').set(cats);
-
     saveData(); 
     renderCatFilters(); 
-    showToast("Category Added Online!"); 
+    showToast("Category Added Successfully!"); 
 }
 
-function editCategory(i) {
+
+        
+
+
+        function editCategory(i) {
     let oldName = cats[i];
     
     showCustomModal({
@@ -1293,52 +1337,33 @@ function editCategory(i) {
         val: oldName,
         onYes: (newName) => {
             let finalName = newName ? newName.trim() : "";
+            
+            // 1. Agar naam khali hai ya purana hi hai
             if (!finalName || finalName === oldName) return;
 
+            // 2. Duplicate 
             let exists = cats.find((c, idx) => c.toLowerCase() === finalName.toLowerCase() && idx !== i);
+
             if(exists) {
                 showToast(`'${finalName}' Already Exists!`, true);
+                
+                // --- YEHA BADLAV HAI ---
+                // Pop-up ko khula rakhne ke liye hum function ko phir se call karenge
                 setTimeout(() => editCategory(i), 100); 
                 return; 
             }
 
+            // 3. Save Logic
             recipes.forEach(r => { if (r.category === oldName) r.category = finalName; });
             cats[i] = finalName; 
-
-            // --- FIREBASE SYNC (Rename) ---
-            db.ref('shared_categories').set(cats);
-            db.ref('shared_recipes_list').set(recipes);
-
             saveData(); 
             renderCatFilters(); 
             renderRecipes();
-            showToast("Updated Online!");
+            showToast("Category Updated!");
         }
     });
 }
 
-// Category Delete Function mein bhi Firebase add kiya
-
-// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
-
-// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
-function deleteCat(i) {
-    if(confirm(`Are you sure you want to delete '${cats[i]}'?`)) {
-        // 1. Local array se delete karein
-        cats.splice(i, 1);
-        
-        // 2. FIREBASE UPDATE (Ye zaroori hai sync ke liye)
-        if (typeof db !== 'undefined') {
-            db.ref('shared_categories').set(cats)
-              .then(() => showToast("Category Deleted Online", "error"))
-              .catch(err => console.error("Sync Error:", err));
-        }
-
-        // 3. Local save aur UI refresh
-        saveData();
-        renderCatFilters();
-    }
-}
 
 
 
@@ -1355,20 +1380,36 @@ function deleteCat(i) {
 // 1. TOGGLE MANAGE (Line by Line with Firebase Refresh)
 // --- 1. TOGGLE MANAGE (Line by Line) ---
 // --- 1. TOGGLE MANAGE (Line by Line) ---
+
 function toggleManage() {
     isManage = !isManage;
     const b = document.getElementById('mBtn');
+    const homeCont = document.getElementById('homeCont');
     
+    // UI update: Button text change
     b.innerText = isManage ? "EXIT" : "MANAGE";
     b.classList.toggle('active', isManage);
-    document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
 
+    // --- DANGER EFFECT TRIGGER ---
+    // Yeh line aapke CSS ke '.manage-mode .card' ko active karegi
+    homeCont.classList.toggle('manage-mode', isManage);
+
+    // Agar EXIT dabaya (isManage false hua), toh screens aur sync reset karo
     if(!isManage) {
+        // Sabhi khule huye panels ko hide karo
         document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-        document.getElementById('homeCont').style.display = 'block';
-        if(typeof initApp === "function") initApp();
+        // Home screen dikhao
+        homeCont.style.display = 'block';
+
+        // --- FIREBASE SYNC ADDED ---
+        // Manage mode se nikalte hi online data se refresh karein
+        if (typeof initApp === "function") {
+            initApp(); 
+        }
     }
 }
+
+
 
 // --- 2. PANEL FUNCTIONS ---
 function openPanel(id) { 
@@ -1630,16 +1671,20 @@ function submitInputModal() {
 
 
 
-
 function renderRecipes() {
     let filtered = (currentFilter === 'ALL') ? recipes : recipes.filter(r => r.category === currentFilter);
-    document.getElementById('recipeGrid').innerHTML = filtered.map((r, i) => {
+    
+    // Parent container ko target karein
+    const grid = document.getElementById('recipeGrid');
+    
+    grid.innerHTML = filtered.map((r, i) => {
         let realIdx = recipes.indexOf(r);
         
         let photoContent = r.img 
             ? `<img src="${r.img}" onerror="this.style.opacity='0'">` 
             : `<div style="font-size: 75px; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; background: #f1f2f6; color: #dfe6e9;">🖼️</div>`;
 
+        // Yahan class check karega: Agar isManage true hai toh automatic class add ho jayegi
         return `
         <div class="card" onclick="isManage ? openInputModal('recipe', ${realIdx}) : openEditor(${realIdx})">
             <div class="card-img-box">${photoContent}</div>
@@ -1647,7 +1692,36 @@ function renderRecipes() {
                 <span class="card-cat-tag">${r.category || 'NO CAT'}</span>
                 <b>${r.name}</b>
             </div>
-        </div>`}).join('');
+        </div>`
+    }).join('');
+}
+
+// --- UPDATED TOGGLE MANAGE (FIREBASE + DANGER EFFECT) ---
+function toggleManage() {
+    isManage = !isManage;
+    const b = document.getElementById('mBtn');
+    
+    // Button UI
+    b.innerText = isManage ? "EXIT" : "MANAGE";
+    b.classList.toggle('active', isManage);
+
+    // 1. DANGER EFFECT: Parent containers par class toggle karein
+    // Isse aapka Jiggle aur Red dashed border shuru ho jayega
+    document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
+    document.getElementById('recipeGrid').classList.toggle('manage-mode', isManage);
+    document.getElementById('stockGrid').classList.toggle('manage-mode', isManage);
+
+    // Agar EXIT dabaya (isManage false hua)
+    if(!isManage) {
+        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+        document.getElementById('homeCont').style.display = 'block';
+
+        // --- FIREBASE SYNC ---
+        // Exit par fresh data load karein taaki Madam ka update dikhe
+        if (typeof initApp === "function") {
+            initApp(); 
+        }
+    }
 }
 
 
