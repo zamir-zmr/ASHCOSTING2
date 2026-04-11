@@ -851,45 +851,47 @@ function Lock() {
 }
 
 // 4. Sabhi Online Listeners ek saath (Category + Stock)
+// --- MASTER SYNC FUNCTION ---
 function startGlobalSync() {
     console.log("Starting Online Sync Services...");
 
-    // CATEGORY SYNC
+    // 1. CATEGORY SYNC (Madam ke mobile ke liye)
     db.ref('shared_categories').on('value', (snapshot) => {
         const onlineCats = snapshot.val();
         if (onlineCats) {
             cats = onlineCats;
             renderCatFilters(); 
             localStorage.setItem('ash_cats', JSON.stringify(cats));
-            console.log("Categories Updated");
+            console.log("Categories Synced Online");
         }
     });
 
-    // STOCK SYNC (Madam App ke liye)
+    // 2. STOCK SYNC (Madam ke mobile ke liye)
     db.ref('shared_stock_list').on('value', (snapshot) => {
         const onlineStock = snapshot.val();
         if (onlineStock) {
             stock = onlineStock;
             renderStock(); 
             localStorage.setItem('ash_stock', JSON.stringify(stock));
-            console.log("Stock Updated");
+            console.log("Stock Synced Online");
+        }
+    });
+
+    // 3. RECIPES SYNC (Agar recipes bhi sync karni hain)
+    db.ref('shared_recipes_list').on('value', (snapshot) => {
+        const onlineRecipes = snapshot.val();
+        if (onlineRecipes) {
+            recipes = onlineRecipes;
+            if (typeof renderRecipes === "function") renderRecipes();
+            localStorage.setItem('ash_recipes', JSON.stringify(recipes));
+            console.log("Recipes Synced Online");
         }
     });
 }
 
-// 5. Initialize
+// 4. Initialize Lock (Lock ke andar se hi Sync start hoga)
 Lock();
 
-
-// Madam ki app ke liye auto-refresh listener
-db.ref('shared_stock_list').on('value', (snapshot) => {
-    const onlineData = snapshot.val();
-    if (onlineData) {
-        stock = onlineData; // Global stock array update karein
-        renderStock();      // Screen refresh karein
-        localStorage.setItem('ash_stock', JSON.stringify(stock));
-    }
-});
 
 
 
@@ -1321,33 +1323,21 @@ function editCategory(i) {
 
 // --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
 function deleteCat(i) {
-    showCustomModal({
-        title: "Delete Category?",
-        msg: `Are you sure you want to delete '${cats[i]}'? This will not delete the recipes inside it.`,
-        showInput: false,
-        onYes: () => {
-            // 1. Pehle local array se delete karein
-            cats.splice(i, 1);
-            
-            // 2. FIREBASE PAR UPDATED LIST BHEJEIN (Ye line Madam ke phone se delete karegi)
-            if (typeof db !== 'undefined') {
-                db.ref('shared_categories').set(cats)
-                .then(() => {
-                    showToast("Category Deleted Online", "error");
-                })
-                .catch((err) => {
-                    console.error("Firebase Sync Error:", err);
-                });
-            }
-            
-            // 3. Local data save aur UI refresh karein
-            saveData(); 
-            renderCatFilters();
-            
-            // Modal band karein
-            if (typeof smartClose === "function") smartClose();
+    if(confirm(`Are you sure you want to delete '${cats[i]}'?`)) {
+        // 1. Local array se delete karein
+        cats.splice(i, 1);
+        
+        // 2. FIREBASE UPDATE (Ye zaroori hai sync ke liye)
+        if (typeof db !== 'undefined') {
+            db.ref('shared_categories').set(cats)
+              .then(() => showToast("Category Deleted Online", "error"))
+              .catch(err => console.error("Sync Error:", err));
         }
-    });
+
+        // 3. Local save aur UI refresh
+        saveData();
+        renderCatFilters();
+    }
 }
 
 
@@ -1920,42 +1910,33 @@ document.addEventListener('DOMContentLoaded', () => {
 // 4. Delete Function (Fixed Hindi Version)
 
 
-
 function handleDeleteAction() {
     showCustomModal({
         title: "Deletion Confirmation",
         msg: "Are you sure you want to delete it permanently?",
         showInput: false,
         onYes: () => {
-            // 1. Pehle decide karein konsi list se delete karna hai
             if(mode === 'recipe') {
                 recipes.splice(activeIdx, 1);
-                // 2. FIREBASE KO BATAO (Online update)
-                if (typeof db !== 'undefined') {
-                    db.ref('shared_recipes_list').set(recipes); 
-                }
+                // --- ONLINE SYNC ---
+                if (typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes);
             } else {
                 stock.splice(activeIdx, 1);
-                // 2. FIREBASE KO BATAO (Online update)
-                if (typeof db !== 'undefined') {
-                    db.ref('shared_stock_list').set(stock);
-                }
+                // --- ONLINE SYNC ---
+                if (typeof db !== 'undefined') db.ref('shared_stock_list').set(stock);
             }
             
-            // 3. Local Storage update karein
             saveData(); 
             initApp();
             
-            showToast("Permanently Deleted from Cloud", "error");
-            
-            // UI band karein
+            // UI Update
             document.getElementById('inputModalOverlay').style.display = 'none';
             smartClose(); 
+            
+            showToast("Permanently Deleted Online", "error");
         }
     });
 }
-
-
 
 function deleteCat(i) {
     showCustomModal({
@@ -1963,15 +1944,29 @@ function deleteCat(i) {
         msg: "Deleting this category will not delete the recipes, but will remove their category tag.",
         showInput: false,
         onYes: () => {
+            // 1. Local list se delete karein
             cats.splice(i, 1);
+
+            // 2. --- FIREBASE SYNC (Is line se "Return" aana band hoga) ---
+            if (typeof db !== 'undefined') {
+                db.ref('shared_categories').set(cats)
+                  .then(() => showToast("Category Deleted Online", "error"))
+                  .catch(err => console.error("Firebase Sync Error:", err));
+            }
+
+            // 3. Local storage aur UI update
             saveData();
             renderCatFilters();
+            
+            // Modal band karein
+            if(typeof smartClose === "function") smartClose();
         }
     });
 }
 
-// Ye line batati hai ki jab "OK" button dabega tab confirm logic chalna chahiye
+// Ye line aapke modal confirmation ko handle karegi
 document.getElementById('confirmYesBtn').onclick = () => closeConfirm(true);
+
 
       
     
