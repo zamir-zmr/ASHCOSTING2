@@ -978,7 +978,7 @@ DATA</button>
     <div class="h-btns" style="gap: 0px;">
         <button class="btn-pill" style="background:#fff; color:var(--accent);" onclick="openPanel('catPanel')">CAT</button>
         <button class="btn-pill btn-stock" onclick="openPanel('stockPanel')">STOCK</button>
-        <button class="btn-add" onclick="openRecipeModal('recipe')">+</button>
+        <button class="btn-add" onclick="openInputModal('recipe')">+</button>
     </div>
 </div>
 
@@ -1040,7 +1040,7 @@ DATA</button>
         <div class="panel-nav">STOCK MATERIALS <span onclick="closePanel('stockPanel')">✕</span>
         </div>
         
-        <button class="btn-pill" style="width:100%; background:var(--primary); color:white; padding:15px; margin-bottom:5px;" onclick="openStockModal('stock')">+ ADD MATERIAL</button>
+        <button class="btn-pill" style="width:100%; background:var(--primary); color:white; padding:15px; margin-bottom:5px;" onclick="openInputModal('stock')">+ ADD MATERIAL</button>
         
         <div style="padding: 0 15px; margin-top: 0px; margin-bottom: 0px; position: relative;">
     <input type="text" id="stockSearchInput" onkeyup="filterStockItems()" 
@@ -1514,59 +1514,46 @@ window.onpopstate = function(event) {
 // --- 4. INPUT MODAL (Name & Category Fix) ---
 
 // --- 1. SIRF STOCK/ITEM KE LIYE ---
-function openStockModal(idx = null) {
-    mode = 'stock'; 
+
+
+// --- 2. SIRF RECIPE KE LIYE ---
+
+function openInputModal(type, idx = null) {
+    mode = type; 
     activeIdx = idx;
     history.pushState({modal: 'inputModal'}, ""); 
     
     document.getElementById('inputModalOverlay').style.display = 'flex';
-    document.getElementById('inputModalTitle').innerText = "📦 ITEM DETAILS";
-    
-    // UI Setup: Stock ke liye price dikhao, category chhupao
-    document.getElementById('priceWrapper').style.display = 'block';
-    document.getElementById('baseWrapper').style.display = 'block';
-    document.getElementById('catSelectSection').style.display = 'none';
     document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
+    
+    if (type === 'stock') {
+        document.getElementById('inputModalTitle').innerText = "Item Details";
+        document.getElementById('priceWrapper').style.display = 'block';
+        document.getElementById('baseWrapper').style.display = 'block';
+        document.getElementById('catSelectSection').style.display = 'none';
+    } else {
+        document.getElementById('inputModalTitle').innerText = "Recipe Details";
+        document.getElementById('priceWrapper').style.display = 'none';
+        document.getElementById('baseWrapper').style.display = 'none';
+        document.getElementById('catSelectSection').style.display = 'block';
+    }
 
     if(idx !== null) {
-        let d = stock[idx];
-        document.getElementById('inp1').value = d.name || "";
-        document.getElementById('inp2').value = d.price || "";
-        document.getElementById('inpBase').value = d.base || 1000;
-        tempImg = d.img || "";
+        let d = (type === 'recipe') ? recipes[idx] : stock[idx];
+        if(d) {
+            document.getElementById('inp1').value = d.name || "";
+            if(type === 'stock') {
+                document.getElementById('inp2').value = d.price || "";
+                document.getElementById('inpBase').value = d.base || 1000;
+            } else {
+                document.getElementById('recipeCatSelect').value = d.category || "";
+            }
+            tempImg = d.img || "";
+        }
     } else {
-        // Naya item add karne ke liye reset
         document.getElementById('inp1').value = ""; 
         document.getElementById('inp2').value = ""; 
         document.getElementById('inpBase').value = "1000"; 
-        tempImg = "";
-    }
-    updatePreview();
-}
-
-// --- 2. SIRF RECIPE KE LIYE ---
-function openRecipeModal(idx = null) {
-    mode = 'recipe'; 
-    activeIdx = idx;
-    history.pushState({modal: 'inputModal'}, ""); 
-    
-    document.getElementById('inputModalOverlay').style.display = 'flex';
-    document.getElementById('inputModalTitle').innerText = "📜 RECIPE DETAILS";
-    
-    // UI Setup: Recipe ke liye category dikhao, price chhupao
-    document.getElementById('priceWrapper').style.display = 'none';
-    document.getElementById('baseWrapper').style.display = 'none';
-    document.getElementById('catSelectSection').style.display = 'block';
-    document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
-
-    if(idx !== null) {
-        let d = recipes[idx];
-        document.getElementById('inp1').value = d.name || "";
-        document.getElementById('recipeCatSelect').value = d.category || "";
-        tempImg = d.img || "";
-    } else {
-        // Nayi recipe ke liye reset
-        document.getElementById('inp1').value = ""; 
         document.getElementById('recipeCatSelect').value = "";
         tempImg = "";
     }
@@ -1774,7 +1761,7 @@ function renderRecipes() {
 
         // Yahan class check karega: Agar isManage true hai toh automatic class add ho jayegi
         return `
-        <div class="card" onclick="isManage ? openRecipeModal('recipe', ${realIdx}) : openEditor(${realIdx})">
+        <div class="card" onclick="isManage ? openInputModal('recipe', ${realIdx}) : openEditor(${realIdx})">
             <div class="card-img-box">${photoContent}</div>
             <div class="card-info">
                 <span class="card-cat-tag">${r.category || 'NO CAT'}</span>
@@ -1841,7 +1828,7 @@ function renderStock() {
             <div style="display:flex; gap:5px; align-items:center;">
 
                 <i class="fas fa-edit" style="color:#38bdf8; font-size:17px; cursor:pointer; padding:5px;" 
-                   onclick="event.stopPropagation(); openStockModal('stock', ${i})"></i>
+                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
                 
                 <i class="fas fa-trash" style="color:#f43f5e; font-size:17px; cursor:pointer; padding:5px;" 
                    onclick="event.stopPropagation(); activeIdx=${i}; mode='stock'; handleDeleteAction();"></i>
