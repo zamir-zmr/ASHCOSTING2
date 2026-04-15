@@ -859,7 +859,7 @@ function startGlobalSync() {
     console.log("Starting Online Sync Services...");
 
     // 1. CATEGORY SYNC (Madam ke mobile ke liye)
-    db.ref('shared_categories2').on('value', (snapshot) => {
+    db.ref('shared_categories').on('value', (snapshot) => {
         const onlineCats = snapshot.val();
         if (onlineCats) {
             cats = onlineCats;
@@ -870,7 +870,7 @@ function startGlobalSync() {
     });
 
     // 2. STOCK SYNC (Madam ke mobile ke liye)
-    db.ref('shared_stock_list2').on('value', (snapshot) => {
+    db.ref('shared_stock_list').on('value', (snapshot) => {
         const onlineStock = snapshot.val();
         if (onlineStock) {
             stock = onlineStock;
@@ -1253,7 +1253,7 @@ function initCatSortable() {
             cats = newOrder;
 
             // --- FIREBASE SYNC (Order Change) ---
-            db.ref('shared_categories2').set(cats);
+            db.ref('shared_categories').set(cats);
 
             saveData();
             refreshOtherUI();
@@ -1279,7 +1279,7 @@ function addCategory() {
     document.getElementById('newCatInp').value = ''; 
 
     // --- FIREBASE SYNC (New Category) ---
-    db.ref('shared_categories2').set(cats);
+    db.ref('shared_categories').set(cats);
 
     saveData(); 
     renderCatFilters(); 
@@ -1309,7 +1309,7 @@ function editCategory(i) {
             cats[i] = finalName; 
 
             // --- FIREBASE SYNC (Rename) ---
-            db.ref('shared_categories2').set(cats);
+            db.ref('shared_categories').set(cats);
             db.ref('shared_recipes_list2').set(recipes);
 
             saveData(); 
@@ -1332,7 +1332,7 @@ function deleteCat(i) {
         
         // 2. FIREBASE UPDATE (Ye zaroori hai sync ke liye)
         if (typeof db !== 'undefined') {
-            db.ref('shared_categories2').set(cats)
+            db.ref('shared_categories').set(cats)
               .then(() => showToast("Category Deleted Online", "error"))
               .catch(err => console.error("Sync Error:", err));
         }
@@ -1508,7 +1508,7 @@ function submitInputModal() {
         
         // --- ADD THIS FOR ONLINE SYNC ---
         if (typeof db !== 'undefined') {
-            db.ref('shared_stock_list2').set(stock);
+            db.ref('shared_stock_list').set(stock);
         }
         
         showToast("Item saved successfully");
@@ -1927,7 +1927,7 @@ function handleDeleteAction() {
             } else {
                 stock.splice(activeIdx, 1);
                 // Stock sync online
-                if (typeof db !== 'undefined') db.ref('shared_stock_list2').set(stock);
+                if (typeof db !== 'undefined') db.ref('shared_stock_list').set(stock);
             }
             
             saveData(); 
@@ -2444,7 +2444,7 @@ function saveStock() {
     
     // 2. FIREBASE SYNC (Isse online dikhega)
     if (typeof db !== 'undefined') {
-        db.ref('shared_stock_list2').set(stock)
+        db.ref('shared_stock_list').set(stock)
           .then(() => console.log("Synced Online"))
           .catch((err) => console.error("Firebase Error:", err));
     }
@@ -2456,7 +2456,7 @@ function saveStock() {
 
 // Madam ki app mein automatically update hone ke liye ye listener bhi zaroori hai
 if (typeof db !== 'undefined') {
-    db.ref('shared_stock_list2').on('value', (snapshot) => {
+    db.ref('shared_stock_list').on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
             stock = data;
@@ -2533,7 +2533,7 @@ function showImageOptions(index, type) {
 
 
 // Firebase data listener
-db.ref('shared_stock_list2').on('value', (snapshot) => {
+db.ref('shared_stock_list').on('value', (snapshot) => {
     const onlineData = snapshot.val();
     if (onlineData) {
         // Variable update karein
