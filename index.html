@@ -1387,21 +1387,21 @@ function addCategory() {
 
 // 1. Toggle Manage Function - Jo EXIT button aur Manage mode ko handle karta hai
 
+
 function toggleManage() {
     isManage = !isManage;
     const b = document.getElementById('mBtn');
     
-    // UI update
     b.innerText = isManage ? "EXIT" : "MANAGE";
     b.classList.toggle('active', isManage);
     document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
 
-    // Agar EXIT dabaya (isManage false hua), toh screens reset karo
     if(!isManage) {
-        // Sabhi khule huye panels ko hide karo
         document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-        // Home screen dikhao
         document.getElementById('homeCont').style.display = 'block';
+        
+        // Refresh data to make sure Zamir and Madam are on same page
+        if(typeof initApp === 'function') initApp();
     }
 }
 
@@ -1901,23 +1901,34 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // 4. Delete Function (Fixed Hindi Version)
+
 function handleDeleteAction() {
     showCustomModal({
-        title: "Deletion Confirmation",
-        msg: "Are you sure you want to delete it permanently?",
+        title: "Delete Permanently?",
+        msg: "This action will remove the item for everyone (Zamir & Madam).",
         showInput: false,
         onYes: () => {
-            // Asli delete yahan hota hai
-            if(mode === 'recipe') recipes.splice(activeIdx, 1);
-            else stock.splice(activeIdx, 1);
+            // 1. Local Array se delete karein
+            if(mode === 'recipe') {
+                recipes.splice(activeIdx, 1);
+                // --- CLOUD SYNC ---
+                if (typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes);
+            } else {
+                stock.splice(activeIdx, 1);
+                // --- CLOUD SYNC ---
+                if (typeof db !== 'undefined') db.ref('shared_stock_list').set(stock);
+            }
             
+            // 2. Local Storage update karein
             saveData(); 
+            
+            // 3. UI Update karein (Madam ke phone par automatic ho jayega agar initApp mein .on listener hai)
             initApp();
             
             // Modal band karein
             document.getElementById('inputModalOverlay').style.display = 'none';
-            // Wapas list par jayein
             smartClose(); 
+            showToast("Deleted & Synced Online ✅");
         }
     });
 }
@@ -2290,24 +2301,67 @@ function processSmartAdd() {
         
         let decoded = JSON.parse(rawCode);
         let addedLog = [];
+        let hasNewData = false;
         
-        if(decoded.s) decoded.s.forEach(item => {
-            if(!stock.some(s => s.name.toLowerCase() === item.name.toLowerCase())) { stock.push(item); addedLog.push("📦 Item: " + item.name); }
-        });
-        if(decoded.r) decoded.r.forEach(rec => {
-            if(!recipes.some(r => r.name.toLowerCase() === rec.name.toLowerCase())) { recipes.push(rec); addedLog.push("📖 Recipe: " + rec.name); }
-        });
-        if(decoded.c) decoded.c.forEach(newCat => {
-            if(!cats.includes(newCat)) { cats.push(newCat); addedLog.push("📁 Category: " + newCat); }
-        });
+        // 1. STOCK ITEMS CHECK & ADD
+        if(decoded.s) {
+            decoded.s.forEach(item => {
+                if(!stock.some(s => s.name.toLowerCase() === item.name.toLowerCase())) { 
+                    stock.push(item); 
+                    addedLog.push("📦 Item: " + item.name);
+                    hasNewData = true;
+                }
+            });
+        }
 
-        if(addedLog.length > 0) {
+        // 2. RECIPES CHECK & ADD
+        if(decoded.r) {
+            decoded.r.forEach(rec => {
+                if(!recipes.some(r => r.name.toLowerCase() === rec.name.toLowerCase())) { 
+                    recipes.push(rec); 
+                    addedLog.push("📖 Recipe: " + rec.name);
+                    hasNewData = true;
+                }
+            });
+        }
+
+        // 3. CATEGORIES CHECK & ADD
+        if(decoded.c) {
+            decoded.c.forEach(newCat => {
+                if(!cats.includes(newCat)) { 
+                    cats.push(newCat); 
+                    addedLog.push("📁 Category: " + newCat);
+                    hasNewData = true;
+                }
+            });
+        }
+
+        if(hasNewData) {
+            // A. LOCAL STORAGE SAVE
             saveData();
+
+            // B. FIREBASE SYNC (Zaroori Fix)
+            // Isse data Online jayega aur Madam ke phone par turant dikhega
+            if (typeof db !== 'undefined') {
+                db.ref('shared_stock_list').set(stock);
+                db.ref('shared_recipes_list').set(recipes);
+                db.ref('shared_categories').set(cats);
+                console.log("JSON Data Synced to Cloud ✅");
+            }
+
+            // C. UI REFRESH
             if(typeof initApp === "function") initApp(); 
+            
             showImportSummary(addedLog);
             inputArea.value = ""; 
-        } else { showToast("All items already exist!", true); }
-    } catch(err) { showToast("Invalid Format!", true); }
+            showToast("Sync Successful! ✅");
+        } else { 
+            showToast("All items already exist!", true); 
+        }
+    } catch(err) { 
+        console.error(err);
+        showToast("Invalid JSON Format!", true); 
+    }
 }
 
 
