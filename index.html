@@ -401,8 +401,6 @@
 }
 
 
-
-
 /* Line 226 se replace karein */
 .panel { 
     position: fixed; 
@@ -777,16 +775,14 @@
 // 1. Firebase Configuration
 // 1. Firebase Configuration
 // 1. Firebase Configuration (Aapka diya hua)
-
 const firebaseConfig = {
-  apiKey: "AIzaSyB_s-aDbjd5FXtu88gUd8j3jYqrdi4Qde8",
-  authDomain: "ashcostingapp-fefcc.firebaseapp.com",
-  databaseURL: "https://ashcostingapp-fefcc-default-rtdb.firebaseio.com",
-  projectId: "ashcostingapp-fefcc",
-  storageBucket: "ashcostingapp-fefcc.firebasestorage.app",
-  messagingSenderId: "732024793940",
-  appId: "1:732024793940:web:a374670fac21619a70f6c1",
-  measurementId: "G-5RZ9S41STN"
+  apiKey: "AIzaSyA3bsKfP7CxS0Sb0CY6xu_vFogVcxbJCII",
+  authDomain: "ashcostingapp.firebaseapp.com",
+  databaseURL: "https://ashcostingapp-default-rtdb.firebaseio.com",
+  projectId: "ashcostingapp",
+  storageBucket: "ashcostingapp.firebasestorage.app",
+  messagingSenderId: "576053214259",
+  appId: "1:576053214259:web:e47a6c38721d62580fb746"
 };
 
 // 2. Initialize Firebase
@@ -970,7 +966,7 @@ function openSmartShare() {
             <input type="file" id="logoInput" hidden accept="image/*" onchange="uploadAppLogo(this)">
         </div>
 <button class="btn-pill" style="background:#7d5fff; color:#fff;" onclick="openSmartShare()">
-Data online</button>
+DATA</button>
 
 
         <!-- <button class="btn-pill" style="background:#000; color:#fff;" onclick="openBackupPanel()">BACKUP</button> -->
@@ -978,9 +974,9 @@ Data online</button>
     </div>
 
     <div class="h-btns" style="gap: 0px;">
-        <button class="btn-pill" style="background:#fff; color:var(--accent);" onclick="openPanel('catPanel')">CATEGORY</button>
+        <button class="btn-pill" style="background:#fff; color:var(--accent);" onclick="openPanel('catPanel')">CAT</button>
         <button class="btn-pill btn-stock" onclick="openPanel('stockPanel')">STOCK</button>
-        <button class="btn-add" onclick="openRecipeModal('recipe')">+</button>
+        <button class="btn-add" onclick="openInputModal('recipe')">+</button>
     </div>
 </div>
 
@@ -1042,47 +1038,13 @@ Data online</button>
         <div class="panel-nav">STOCK MATERIALS <span onclick="closePanel('stockPanel')">✕</span>
         </div>
         
-        <button class="btn-pill" style="width:100%; background:var(--primary); color:white; padding:15px; margin-bottom:5px;" onclick="openStockModal('stock')">+ ADD MATERIAL</button>
+        <button class="btn-pill" style="width:100%; background:var(--primary); color:white; padding:15px; margin-bottom:15px;" onclick="openInputModal('stock')">+ ADD MATERIAL</button>
         
-        <div style="padding: 0 15px; margin-top: 0px; margin-bottom: 0px; position: relative;">
-    <input type="text" id="stockSearchInput" onkeyup="filterStockItems()" 
-           placeholder="Search materials..." 
-           style="width: 100%; 
-                  padding: 12px 40px 12px 15px; 
-                  border-radius: 12px; 
-                  border: 1px solid #e2e8f0; 
-                  outline: none; 
-                  font-size: 14px; 
-                  background-color: #ffffff;
-                  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-                  transition: all 0.3s ease;">
-    
-    <i class="fas fa-search" style="position: absolute; 
-                                   right: 30px; 
-                                   top: 50%; 
-                                   transform: translateY(-80%); 
-                                   color: #94a3b8; 
-                                   font-size: 14px;"></i>
-</div>
-
-        
-<div class="panel-content" style="
-    padding: 10px 15px; 
-    overflow-y: auto; 
-    flex: 1; 
-    margin-top: 0px; 
-    margin-bottom: 0px;
-
-    border-radius: 0 0 20px 20px;
-">
-    
-    <div id="stockList" style="display: flex; flex-direction: column; gap: 0px;">
+        <div class="panel-content" style="padding:15px; overflow-y:auto; flex:1;">
+            
+            <div id="stockList"></div>
         </div>
-</div>
-
-
     </div>
-
 
 <div id="catPanel" class="panel">
     <div class="panel-nav">MANAGE CATEGORIES <span onclick="closePanel('catPanel')">✕</span></div>
@@ -1179,6 +1141,8 @@ let activeIdx = null, mode = '', tempImg = '', isManage = false, currentFilter =
 let longPressTimer;
 
 
+
+
 function initApp() {
     
     renderCatFilters();
@@ -1197,43 +1161,6 @@ function initApp() {
             if(document.querySelector('.ash-logo-circle')) document.querySelector('.ash-logo-circle').style.display = 'none';
             if(document.querySelector('.ash-yellow-lines')) document.querySelector('.ash-yellow-lines').style.display = 'none';
         }
-    }
-}
-
-
-
-// Helper functions for offline backup
-function loadLocalStock() {
-    let local = localStorage.getItem('stock_list');
-    if(local) {
-        stock = JSON.parse(local);
-        renderStock();
-    }
-}
-
-function loadLocalRecipes() {
-    let local = localStorage.getItem('recipes_list');
-    if(local) {
-        recipes = JSON.parse(local);
-        renderRecipes();
-    }
-}
-
-
-// Helper functions for offline backup
-function loadLocalStock() {
-    let local = localStorage.getItem('stock_list');
-    if(local) {
-        stock = JSON.parse(local);
-        renderStock();
-    }
-}
-
-function loadLocalRecipes() {
-    let local = localStorage.getItem('recipes_list');
-    if(local) {
-        recipes = JSON.parse(local);
-        renderRecipes();
     }
 }
 
@@ -1280,10 +1207,7 @@ function uploadAppLogo(input) {
         
 
         /* --- CATEGORY LOGIC --- */
-
-
 function renderCatFilters() {
-    // Top bar aur dropdown ka logic (Aapka existing code)
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
     cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
     document.getElementById('catFilterBar').innerHTML = html;
@@ -1292,29 +1216,19 @@ function renderCatFilters() {
     cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
     document.getElementById('recipeCatSelect').innerHTML = drop;
 
-    // Category Manager List (Full Row Draggable Design)
     document.getElementById('catManagerList').innerHTML = cats.map((c, i) => `
     <div class="draggable-item" data-name="${c}" style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; touch-action: pan-y;">
-        
         <div style="display:flex; align-items:center; flex:1;">
-
             <b class="cat-name-text" style="color:var(--accent)">${c}</b>
         </div>
-
         <div style="display:flex; gap:15px; align-items:center;">
             <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); editCategory(${i})"></i>
-            
             <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); deleteCat(${i})"></i>
         </div>
     </div>`).join('');
 
-
-    // --- YE LINE FIX KAREGI ---
-    // Naya category bante hi Sortable ko re-initialize karega
     setTimeout(initCatSortable, 200); 
 }
-
-// Naya Function: Jo order save karega
 
 function initCatSortable() {
     let el = document.getElementById('catManagerList');
@@ -1324,9 +1238,9 @@ function initCatSortable() {
 
     el.sortableInstance = Sortable.create(el, {
         animation: 150,
-        delay: 500,             // 0.5 second ka long press
-        delayOnTouchOnly: true, // Sirf mobile touch par delay hoga
-        touchStartThreshold: 5, // 5px tak ungli hilegi toh cancel nahi hoga
+        delay: 500,
+        delayOnTouchOnly: true,
+        touchStartThreshold: 5,
         ghostClass: 'sortable-ghost',
         onEnd: function() {
             let newOrder = [];
@@ -1334,71 +1248,42 @@ function initCatSortable() {
                 newOrder.push(item.innerText.trim());
             });
             cats = newOrder;
+
+            // --- FIREBASE SYNC (Order Change) ---
+            db.ref('shared_categories').set(cats);
+
             saveData();
-            refreshOtherUI(); // Top bar refresh
-            showToast("Saved");
+            refreshOtherUI();
+            showToast("Order Saved Online");
         }
     });
 }
 
-
-// Sirf top bar refresh karne ke liye naya function
-function refreshTopFilters() {
-    let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
-    cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
-    document.getElementById('catFilterBar').innerHTML = html;
-}
-
-
-function refreshOtherUI() {
-    // Top bar filters update
-    let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
-    cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
-    document.getElementById('catFilterBar').innerHTML = html;
-    
-    // Recipe dropdown update
-    let drop = `<option value="">No Category</option>`;
-    cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
-    document.getElementById('recipeCatSelect').innerHTML = drop;
-}
-
-
-
-        function filterBy(c) { currentFilter = c; renderRecipes(); renderCatFilters(); }
-        
-        
-        
 function addCategory() {
     let val = document.getElementById('newCatInp').value.trim();
-    
-    // 1. Khali input 
     if(!val) {
         showToast("Please enter a category name!", true);
         return;
     }
 
-    // 2. Duplicate 
     let exists = cats.find(c => c.toLowerCase() === val.toLowerCase());
-
     if(exists) {
-        // Agar pehle se hai, toh message dikhao aur wahi ruk jao
-        showToast(`'${val}'  already exists in Category`, true);
+        showToast(`'${val}' already exists in Category`, true);
         return; 
     }
 
-    // 3. Naya add karo agar upar wali conditions fail ho gayi
     cats.push(val); 
     document.getElementById('newCatInp').value = ''; 
+
+    // --- FIREBASE SYNC (New Category) ---
+    db.ref('shared_categories').set(cats);
+
     saveData(); 
     renderCatFilters(); 
-    showToast("Category Added Successfully!"); 
+    showToast("Category Added Online!"); 
 }
 
-
-        
-
-
-        function editCategory(i) {
+function editCategory(i) {
     let oldName = cats[i];
     
     showCustomModal({
@@ -1408,33 +1293,52 @@ function addCategory() {
         val: oldName,
         onYes: (newName) => {
             let finalName = newName ? newName.trim() : "";
-            
-            // 1. Agar naam khali hai ya purana hi hai
             if (!finalName || finalName === oldName) return;
 
-            // 2. Duplicate 
             let exists = cats.find((c, idx) => c.toLowerCase() === finalName.toLowerCase() && idx !== i);
-
             if(exists) {
                 showToast(`'${finalName}' Already Exists!`, true);
-                
-                // --- YEHA BADLAV HAI ---
-                // Pop-up ko khula rakhne ke liye hum function ko phir se call karenge
                 setTimeout(() => editCategory(i), 100); 
                 return; 
             }
 
-            // 3. Save Logic
             recipes.forEach(r => { if (r.category === oldName) r.category = finalName; });
             cats[i] = finalName; 
+
+            // --- FIREBASE SYNC (Rename) ---
+            db.ref('shared_categories').set(cats);
+            db.ref('shared_recipes_list').set(recipes);
+
             saveData(); 
             renderCatFilters(); 
             renderRecipes();
-            showToast("Category Updated!");
+            showToast("Updated Online!");
         }
     });
 }
 
+// Category Delete Function mein bhi Firebase add kiya
+
+// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
+
+// --- CATEGORY DELETE FUNCTION (WITH FIREBASE SYNC) ---
+function deleteCat(i) {
+    if(confirm(`Are you sure you want to delete '${cats[i]}'?`)) {
+        // 1. Local array se delete karein
+        cats.splice(i, 1);
+        
+        // 2. FIREBASE UPDATE (Ye zaroori hai sync ke liye)
+        if (typeof db !== 'undefined') {
+            db.ref('shared_categories').set(cats)
+              .then(() => showToast("Category Deleted Online", "error"))
+              .catch(err => console.error("Sync Error:", err));
+        }
+
+        // 3. Local save aur UI refresh
+        saveData();
+        renderCatFilters();
+    }
+}
 
 
 
@@ -1445,55 +1349,46 @@ function addCategory() {
 
 // 1. Toggle Manage Function - Jo EXIT button aur Manage mode ko handle karta hai
 
-// --- 1. NAVIGATION & MANAGE MODE ---
-// --- 1. TOGGLE MANAGE (Line by Line) ---
-// --- 1. TOGGLE MANAGE (Line by Line) ---
-// 1. TOGGLE MANAGE (Line by Line with Firebase Refresh)
-// --- 1. TOGGLE MANAGE (Line by Line) ---
-// --- 1. TOGGLE MANAGE (Line by Line) ---
-
 function toggleManage() {
     isManage = !isManage;
     const b = document.getElementById('mBtn');
-    const homeCont = document.getElementById('homeCont');
     
-    // UI update: Button text change
+    // UI update
     b.innerText = isManage ? "EXIT" : "MANAGE";
     b.classList.toggle('active', isManage);
+    document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
 
-    // --- DANGER EFFECT TRIGGER ---
-    // Yeh line aapke CSS ke '.manage-mode .card' ko active karegi
-    homeCont.classList.toggle('manage-mode', isManage);
-
-    // Agar EXIT dabaya (isManage false hua), toh screens aur sync reset karo
+    // Agar EXIT dabaya (isManage false hua), toh screens reset karo
     if(!isManage) {
         // Sabhi khule huye panels ko hide karo
         document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
         // Home screen dikhao
-        homeCont.style.display = 'block';
-
-        // --- FIREBASE SYNC ADDED ---
-        // Manage mode se nikalte hi online data se refresh karein
-        if (typeof initApp === "function") {
-            initApp(); 
-        }
+        document.getElementById('homeCont').style.display = 'block';
     }
 }
 
 
 
-// --- 2. PANEL FUNCTIONS ---
+// 2. Panel Functions - History support ke saath
 function openPanel(id) { 
     history.pushState({panel: id}, ""); 
     document.getElementById(id).style.display = 'flex'; 
 }
 
-function closePanel(id) { history.back(); }
-function smartClose() { history.back(); }
+function closePanel(id) { 
+    history.back(); 
+}
 
-// --- 3. MOBILE BACK BUTTON FIX ---
+function smartClose() { 
+    history.back(); 
+}
+
+// 3. MOBILE BACK BUTTON FIX (Sabse Important)
 window.onpopstate = function(event) {
+    // A. Saare Modals aur Panels ko band karo
     document.querySelectorAll('.panel, .modal-overlay').forEach(el => el.style.display = 'none');
+    
+    // B. Manage Mode ko RESET karo (Mobile back dabane par EXIT apne aap MANAGE ban jaye)
     isManage = false;
     const b = document.getElementById('mBtn');
     if(b) {
@@ -1503,176 +1398,73 @@ window.onpopstate = function(event) {
     const homeCont = document.getElementById('homeCont');
     if(homeCont) {
         homeCont.classList.remove('manage-mode');
-        homeCont.style.display = 'block';
+        homeCont.style.display = 'block'; // Home screen wapas dikhao
     }
-    if(typeof initApp === "function") initApp(); 
-
+    
+    // C. Agar history mein koi panel hai toh use wapas dikhao
     if (event.state && event.state.panel) {
         let panel = document.getElementById(event.state.panel);
         if (panel) panel.style.display = 'flex';
     }
 };
 
-// --- 4. INPUT MODAL (Name & Category Fix) ---
+// 4. Input Modal Functions
 
-// --- 1. SIRF STOCK/ITEM KE LIYE ---
-function openStockModal(idx = null) {
-    mode = 'stock'; 
+function openInputModal(type, idx = null) {
+    mode = type; 
     activeIdx = idx;
     history.pushState({modal: 'inputModal'}, ""); 
     
     document.getElementById('inputModalOverlay').style.display = 'flex';
-    document.getElementById('inputModalTitle').innerText = "📦 ITEM DETAILS";
-    
-    // UI Setup: Stock ke liye price dikhao, category chhupao
-    document.getElementById('priceWrapper').style.display = 'block';
-    document.getElementById('baseWrapper').style.display = 'block';
-    document.getElementById('catSelectSection').style.display = 'none';
     document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
+    
+    // Set Dynamic Titles and visibility
+    if (type === 'stock') {
+        document.getElementById('inputModalTitle').innerText = "Item Details";
+        document.getElementById('priceWrapper').style.display = 'block';
+        document.getElementById('baseWrapper').style.display = 'block';
+        document.getElementById('catSelectSection').style.display = 'none';
+    } else {
+        document.getElementById('inputModalTitle').innerText = "Recipe Details";
+        document.getElementById('priceWrapper').style.display = 'none';
+        document.getElementById('baseWrapper').style.display = 'none';
+        document.getElementById('catSelectSection').style.display = 'block';
+    }
 
+    // Load Data
     if(idx !== null) {
-        let d = stock[idx];
-        document.getElementById('inp1').value = d.name || "";
-        document.getElementById('inp2').value = d.price || "";
-        document.getElementById('inpBase').value = d.base || 1000;
+        let d = (type === 'recipe') ? recipes[idx] : stock[idx];
+        document.getElementById('inp1').value = d.name;
+        if(type === 'stock') {
+            document.getElementById('inp2').value = d.price || "";
+            // Agar pehle se saved base hai toh wo dikhao, nahi toh 1000
+            document.getElementById('inpBase').value = d.base || 1000;
+        } else {
+            document.getElementById('recipeCatSelect').value = d.category || "";
+        }
         tempImg = d.img || "";
     } else {
-        // Naya item add karne ke liye reset
+        // NAYA ITEM BANANE KE LIYE:
         document.getElementById('inp1').value = ""; 
         document.getElementById('inp2').value = ""; 
-        document.getElementById('inpBase').value = "1000"; 
+        // CHANGE: "" ki jagah "1000" likha taaki user ka kaam asaan ho jaye
+        document.getElementById('inpBase').value = ""; 
         tempImg = "";
     }
     updatePreview();
 }
 
-// --- 2. SIRF RECIPE KE LIYE ---
-function openRecipeModal(idx = null) {
-    mode = 'recipe'; 
-    activeIdx = idx;
-    history.pushState({modal: 'inputModal'}, ""); 
-    
-    document.getElementById('inputModalOverlay').style.display = 'flex';
-    document.getElementById('inputModalTitle').innerText = "📜 RECIPE DETAILS";
-    
-    // UI Setup: Recipe ke liye category dikhao, price chhupao
-    document.getElementById('priceWrapper').style.display = 'none';
-    document.getElementById('baseWrapper').style.display = 'none';
-    document.getElementById('catSelectSection').style.display = 'block';
-    document.getElementById('delBtnInModal').style.display = (idx !== null) ? 'block' : 'none';
 
-    if(idx !== null) {
-        let d = recipes[idx];
-        document.getElementById('inp1').value = d.name || "";
-        document.getElementById('recipeCatSelect').value = d.category || "";
-        tempImg = d.img || "";
-    } else {
-        // Nayi recipe ke liye reset
-        document.getElementById('inp1').value = ""; 
-        document.getElementById('recipeCatSelect').value = "";
-        tempImg = "";
-    }
-    updatePreview();
-}
 
-// --- 5. SUGGESTION & ADDING LOGIC (FIXED FOR SELECTION) ---
-
-function showSuggest(q) {
-    const suggDiv = document.getElementById('suggestions');
-    if(!q || !suggDiv) { 
-        if(suggDiv) suggDiv.innerHTML = ''; 
-        return; 
-    }
-    
-    let fits = stock.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
-    
-    suggDiv.innerHTML = fits.map(f => {
-        let b = f.base || 1000; 
-        // Single quote escape kiya taaki selection break na ho
-        let safeName = f.name.replace(/'/g, "\\'");
-        return `
-            <div style="padding:15px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer; background:#fff; color:#2d3436;" 
-                 onclick="addIng('${safeName}', ${f.price}, ${b})"> 
-                ${f.name} 
-                <span style="float:right; color:#00D2D3;">
-                    ${f.price.toFixed(3)} OMR / ${b}G
-                </span>
-            </div>`;
-    }).join('');
-}
-
-function addIng(n, p, b) {
-    // Check karein ki koi recipe khuli hai ya nahi
-    if (activeIdx === null || activeIdx === undefined) {
-        alert("Please open a recipe first");
-        return;
-    }
-    
-    let currentRecipe = recipes[activeIdx];
-    if(!currentRecipe.items) currentRecipe.items = [];
-    
-    // Naya item object
-    let newItem = { 
-        name: n, 
-        price: parseFloat(p) || 0, 
-        total: parseFloat(b) || 1000, 
-        used: 0 
-    };
-
-    currentRecipe.items.push(newItem);
-
-    // 1. Search input saaf karein
-    const sInp = document.getElementById('ingSearchInput'); // Ensure id is correct in HTML
-    if(sInp) sInp.value = '';
-    
-    // 2. Suggestions chhupayein
-    const suggDiv = document.getElementById('suggestions');
-    if(suggDiv) suggDiv.innerHTML = ''; 
-    
-    // 3. Firebase aur Local save
-    saveData();
-    syncToFirebase();
-    
-    // 4. UI Update karein taaki naya item list mein dikhe
-    if(typeof renderTable === "function") renderTable(); 
-}
-
-// --- 6. MASTER FIREBASE SYNC ---
-function syncToFirebase() {
-    if(typeof db !== 'undefined') {
-        db.ref('shared_stock_list').set(stock);
-        db.ref('shared_recipes_list').set(recipes);
-        db.ref('shared_categories').set(cats);
-        console.log("Cloud Updated!");
-    }
-}
-
+// 1. Modal band karne ka function
 function closeInputModalDirectly() {
-    syncToFirebase();
+    // Direct band karne ke liye history back call karein 
     history.back();
 }
-
-
-
-
-// --- 5. FIREBASE SYNC HELPER (Har save ke baad ise call karein) ---
-function syncWithFirebase() {
-    if (typeof db === 'undefined') return;
-
-    if (mode === 'stock') {
-        db.ref('shared_stock_list').set(stock);
-    } else if (mode === 'recipe') {
-        db.ref('shared_recipes_list').set(recipes);
-    }
-    // Categories sync already deleteCat/addCategory mein handle ho chuka hai
-}
-
 
 // 2. Data save karne ka main function (SIRF EK RAKHEIN)
 
 
-
-/// stockList ke liye
 function submitInputModal() {
     let name = document.getElementById('inp1').value.trim();
     let priceInput = document.getElementById('inp2').value.trim();
@@ -1761,205 +1553,66 @@ function submitInputModal() {
 
 
 
+
 function renderRecipes() {
     let filtered = (currentFilter === 'ALL') ? recipes : recipes.filter(r => r.category === currentFilter);
-    
-    // Parent container ko target karein
-    const grid = document.getElementById('recipeGrid');
-    
-    grid.innerHTML = filtered.map((r, i) => {
+    document.getElementById('recipeGrid').innerHTML = filtered.map((r, i) => {
         let realIdx = recipes.indexOf(r);
         
         let photoContent = r.img 
             ? `<img src="${r.img}" onerror="this.style.opacity='0'">` 
             : `<div style="font-size: 75px; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; background: #f1f2f6; color: #dfe6e9;">🖼️</div>`;
 
-        // Yahan class check karega: Agar isManage true hai toh automatic class add ho jayegi
         return `
-        <div class="card" onclick="isManage ? openRecipeModal('recipe', ${realIdx}) : openEditor(${realIdx})">
+        <div class="card" onclick="isManage ? openInputModal('recipe', ${realIdx}) : openEditor(${realIdx})">
             <div class="card-img-box">${photoContent}</div>
             <div class="card-info">
                 <span class="card-cat-tag">${r.category || 'NO CAT'}</span>
                 <b>${r.name}</b>
             </div>
-        </div>`
-    }).join('');
-}
-
-// --- UPDATED TOGGLE MANAGE (FIREBASE + DANGER EFFECT) ---
-function toggleManage() {
-    isManage = !isManage;
-    const b = document.getElementById('mBtn');
-    
-    // Button UI
-    b.innerText = isManage ? "EXIT" : "MANAGE";
-    b.classList.toggle('active', isManage);
-
-    // 1. DANGER EFFECT: Parent containers par class toggle karein
-    // Isse aapka Jiggle aur Red dashed border shuru ho jayega
-    document.getElementById('homeCont').classList.toggle('manage-mode', isManage);
-    document.getElementById('recipeGrid').classList.toggle('manage-mode', isManage);
-    document.getElementById('stockGrid').classList.toggle('manage-mode', isManage);
-
-    // Agar EXIT dabaya (isManage false hua)
-    if(!isManage) {
-        document.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
-        document.getElementById('homeCont').style.display = 'block';
-
-        // --- FIREBASE SYNC ---
-        // Exit par fresh data load karein taaki Madam ka update dikhe
-        if (typeof initApp === "function") {
-            initApp(); 
-        }
-    }
+        </div>`}).join('');
 }
 
 
 
-
-// --- 1. RENDER STOCK (Triggers aur StopPropagation ke saath) ---
 function renderStock() {
     const list = document.getElementById('stockList');
-    if (!list) return;
+    if (!list) return; // Error se bachne ke liye
 
     list.innerHTML = stock.map((s, i) => {
+        // Safety check: Agar price nahi hai toh 0 dikhao
         const itemPrice = (s.price && !isNaN(s.price)) ? s.price : 0;
         const itemBase = s.base || 1000;
 
         return `
-        <div class="row-item" 
-             style="display: grid; grid-template-columns: 1fr auto; padding: 15px; border-bottom: 1px solid #f1f2f6; align-items: center;"
-             /* LONG PRESS TRIGGERS YAHAN ADD KIYE HAIN */
-             ontouchstart="startLongPress(${i})" 
-             ontouchend="cancelLongPress()" 
-             onmousedown="startLongPress(${i})" 
-             onmouseup="cancelLongPress()">
-            
+        <div class="row-item" style="grid-template-columns: 1fr auto; padding: 12px; border-bottom: 1px solid #eee;">
             <div>
-                <b style="font-size:15px; color:#2d3436;">${s.name || 'No Name'}</b><br>
-                <small style="color:#00b894; font-weight:600;">${itemPrice.toFixed(3)} OMR / ${itemBase}g</small>
+                <b style="font-size:14px;">${s.name || 'No Name'}</b><br>
+                <small style="color:#666;">${itemPrice.toFixed(3)} OMR / ${itemBase}g</small>
             </div>
-            
-            <div style="display:flex; gap:5px; align-items:center;">
-
-                <i class="fas fa-edit" style="color:#38bdf8; font-size:17px; cursor:pointer; padding:5px;" 
-                   onclick="event.stopPropagation(); openStockModal('stock', ${i})"></i>
-                
-                <i class="fas fa-trash" style="color:#f43f5e; font-size:17px; cursor:pointer; padding:5px;" 
-                   onclick="event.stopPropagation(); activeIdx=${i}; mode='stock'; handleDeleteAction();"></i>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fas fa-edit" style="color:#38bdf8;" onclick="openInputModal('stock', ${i})"></i>
+                <i class="fas fa-trash" style="color:#f43f5e;" onclick="deleteStockItem(${i})"></i>
             </div>
         </div>`;
     }).join('');
-}
-
-// --- POINT 9: STOCK Search FILTER LOGIC ---
-function filterStockItems() {
-    // 1. User ne kya type kiya wo lein
-    let input = document.getElementById('stockSearchInput').value.toLowerCase();
-    
-    // 2. Stock list ke saare rows ko dhoondein
-    let list = document.getElementById('stockList');
-    let items = list.getElementsByClassName('row-item');
-
-    for (let i = 0; i < items.length; i++) {
-        // Har row ke andar jo material ka naam (<b> tag) hai use dhoondein
-        let nameElement = items[i].getElementsByTagName('b')[0];
-        if (nameElement) {
-            let nameText = nameElement.textContent || nameElement.innerText;
-            
-            // 3. Agar naam match karta hai toh dikhayein, nahi toh hide karein
-            if (nameText.toLowerCase().indexOf(input) > -1) {
-                items[i].style.display = "grid"; // Aapne grid use kiya hai
-            } else {
-                items[i].style.display = "none";
-            }
-        }
-    }
-}
-
-// --- 2. LONG PRESS LOGIC (Aapka Code + Back Button Fix) ---
-
-function startLongPress(i) {
-    // 600ms tak daba ke rakhne par popup aayega
-    longPressTimer = setTimeout(() => {
-        let s = stock[i];
-        
-        // Modal mein details bharna
-        document.getElementById('stockViewName').innerText = s.name || "No Name";
-        document.getElementById('stockViewPrice').innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
-        
-        let img = document.getElementById('stockViewImg');
-        if(s.img) { 
-            img.src = s.img; 
-            img.style.display = 'block'; 
-        } else { 
-            img.style.display = 'none'; 
-        }
-
-        // --- BACK BUTTON FIX ---
-        // Isse mobile ka back button dabane par sirf photo band hogi, app home par nahi jayega
-        history.pushState({modal: "view"}, "");
-        document.getElementById('stockViewModal').style.display = 'flex';
-        
-        // Haptic Feedback (Vibration)
-        if(navigator.vibrate) navigator.vibrate(50);
-    }, 600);
-}
-
-function cancelLongPress() { 
-    clearTimeout(longPressTimer); 
-}
-
-// --- 3. DELETE ACTION (Firebase Online Sync ke saath) ---
-function handleDeleteAction() {
-    showCustomModal({
-        title: "Delete Confirmation",
-        msg: "Kya aap ise hamesha ke liye delete karna chahte hain?",
-        onYes: () => {
-            if(mode === 'stock') {
-                stock.splice(activeIdx, 1);
-                
-                // --- FIREBASE SYNC (Last Item Delete Formula) ---
-                if (typeof db !== 'undefined') {
-                    // Agar array 0 hai toh [] bhejo taaki Firebase puri tarah saaf ho jaye
-                    let syncData = (stock.length === 0) ? [] : stock;
-                    db.ref('shared_stock_list').set(syncData);
-                }
-            }
-            
-            saveData(); 
-            
-            // UI Refresh: Aap stock layout mein hi rahenge
-            if(typeof initApp === "function") initApp();
-            else renderStock();
-
-            // Modals band karein
-            if(document.getElementById('inputModalOverlay')) {
-                document.getElementById('inputModalOverlay').style.display = 'none';
-            }
-            if(typeof smartClose === "function") smartClose(); 
-            
-            showToast("Permanently Deleted Online", "error");
-        }
-    });
 }
 
 
 
 
         /* --- CALCULATIONS --- */
-function openEditor(i) {
-    activeIdx = i; 
-    let r = recipes[i];
-    history.pushState({modal: "editor"}, "");
-    document.getElementById('activeTitle').innerText = r.name;
-    document.getElementById('packInp').value = r.packaging || 0;
-    document.getElementById('effInp').value = r.effortPct || 0;
-    document.getElementById('sellInp').value = r.marginPct || 0;
-    document.getElementById('editorPanel').style.display = 'flex';
-    renderTable();
-}
-
+        function openEditor(i) {
+            activeIdx = i; let r = recipes[i];
+            history.pushState({modal: "editor"}, "");
+            document.getElementById('activeTitle').innerText = r.name;
+            document.getElementById('packInp').value = r.packaging || 0;
+            document.getElementById('effInp').value = r.effortPct || 0;
+            document.getElementById('sellInp').value = r.marginPct || 0;
+            document.getElementById('editorPanel').style.display = 'flex';
+            renderTable();
+        }
+        
 function renderTable() {
     let r = recipes[activeIdx];
     let html = "";
@@ -1970,14 +1623,14 @@ function renderTable() {
         
         if(latestItem) {
             it.price = latestItem.price;
-            // CHANGE: Fallback changed from 1000 to 1 as per your previous requirement
-            it.total = latestItem.base || it.total || 1000;
+            // CHANGE: Fallback changed from 1000 to 1
+            it.total = latestItem.base || latestItem.total || 1000;
         }
 
         html += `
         <div class="row-item" data-id="${i}" style="touch-action: pan-y; display: grid; grid-template-columns: 28px 1.5fr 42px 42px 42px 55px; align-items: center; gap: 0; padding: 6px 2px; margin: 4px 0; background: #fff; border: 1px solid #f0f0f0; border-left: 4px solid #00D2D3; border-radius: 6px; box-shadow: none;">
             
-            <div onclick="removeIng(${i})" style="color:#ff7675; cursor:pointer; text-align: center; font-size: 14px; border-right: 1px solid #eee; height: 24px; display: flex; align-items: center; justify-content: center;">✕</div>
+            <div onclick="recipes[activeIdx].items.splice(${i},1); renderTable()" style="color:#ff7675; cursor:pointer; text-align: center; font-size: 14px; border-right: 1px solid #eee; height: 24px; display: flex; align-items: center; justify-content: center;">✕</div>
             
             <div style="padding-left: 6px; border-right: 1px solid #eee; overflow: hidden;">
                 <input type="text" value="${it.name}" oninput="upd(${i},'name',this.value)" style="width: 100%; font-size: 12px; border:none; background:transparent; font-weight: 600; color: #2d3436; outline: none; height: 24px;">
@@ -2001,58 +1654,67 @@ function renderTable() {
     calcTotal();
 }
 
-// Naya Function: Jo row delete karega aur Firebase update karega
-function removeIng(i) {
-    recipes[activeIdx].items.splice(i, 1);
-    // Firebase Sync
-    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
-    saveData();
-    renderTable();
-}
 
+// Ye naya function apne code mein niche paste kar dein
 function initDragLogic() {
     const el = document.getElementById('ingredientList');
+    
+    // Purane instance ko khatam karke naya banata hai
     if (window.listSorter) window.listSorter.destroy();
 
     window.listSorter = Sortable.create(el, {
         animation: 150,
-        delay: 400,
+        delay: 400, // 0.4 second long press karein phir drag karein
         delayOnTouchOnly: true,
         onEnd: function (evt) {
             let items = recipes[activeIdx].items;
+            // Array mein item ki jagah badalna
             const movedItem = items.splice(evt.oldIndex, 1)[0];
             items.splice(evt.newIndex, 0, movedItem);
             
-            // Firebase Sync Order change hone par
-            if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
             saveData();
+            // Sirf calculation update karein, pura table nahi warna focus bigad jayega
             calcTotal(); 
         }
     });
 }
 
-function upd(i, k, v) { 
+
+
+
+
+        
+        
+        
+
+        function upd(i, k, v) { 
     let recipe = recipes[activeIdx];
     recipe.items[i][k] = (k === 'name') ? v : parseFloat(v) || 0; 
 
+    // Sirf us row ki COST ko update karein (taaki keyboard na band ho)
     let item = recipe.items[i];
     let rowCost = (item.price / item.total) * item.used || 0;
     
+    // Row ke cost display ko live update karna
     let rows = document.querySelectorAll('#ingredientList .row-item');
     if(rows[i]) {
         rows[i].querySelector('b').innerText = rowCost.toFixed(3);
     }
 
+    // Neeche ka Grand Total update karein
     calcTotal(); 
 }
-
 function calcTotal() {
     let r = recipes[activeIdx];
     let recipeT = 0;
     
     (r.items || []).forEach(it => {
+        // Stock material se latest base dhundna
         let stockItem = stock.find(s => s.name === it.name);
+        
+        // CHANGE: Fallback changed from 1000 to 1
         let currentBase = (stockItem && stockItem.base) ? stockItem.base : (it.total || 1000);
+        
         recipeT += (it.price / currentBase) * it.used || 0;
     });
     
@@ -2076,50 +1738,49 @@ function showSuggest(q) {
         document.getElementById('suggestions').innerHTML = ''; 
         return; 
     }
+    
     let fits = stock.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
+    
     document.getElementById('suggestions').innerHTML = fits.map(f => {
+        // CHANGE: Default base changed from 1000 to 1
         let b = f.base || 1000; 
+        
         return `
             <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;" 
-                 onclick="addIng('${f.name.replace(/'/g, "\\'")}', ${f.price}, ${b})"> 
+                 onclick="addIng('${f.name}', ${f.price}, ${b})"> 
                 ${f.name} 
-                <span style="float:right; color:#00D2D3;">
+                <span style="float:right; color:var(--primary)">
                     ${f.price.toFixed(3)} OMR / ${b} G
                 </span>
             </div>`;
     }).join('');
 }
 
+
 function addIng(n, p, b) {
+    // b wo gram hai jo aapne stock mein save kiya (e.g. 500)
+    // Agar b nahi mil raha toh default 1000
     let finalBase = b || 1000;
-    if(!recipes[activeIdx].items) recipes[activeIdx].items = [];
-    
+
     recipes[activeIdx].items.push({ 
         name: n, 
         price: p, 
-        total: finalBase, 
+        total: finalBase, // Ab ye hamesha 1000 nahi hoga!
         used: 0 
     });
 
-    // Firebase Sync New Ingredient add hone par
-    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
-
+    // Search box saaf karo
     let sInp = document.querySelector('#editorPanel input[oninput*="showSuggest"]');
     if(sInp) sInp.value = '';
+    
     document.getElementById('suggestions').innerHTML = ''; 
-    saveData();
     renderTable(); 
 }
 
-function saveAndExit() { 
-    // Final Firebase Sync jab user modal band kare
-    if(typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes); 
-    saveData(); 
-    smartClose(); 
-}
-
-function clearPhoto() { tempImg = ''; updatePreview(); }
-
+        
+        
+        function saveAndExit() { saveData(); smartClose(); }
+        function clearPhoto() { tempImg = ''; updatePreview(); }
 
         /* --- IMAGE & LONG PRESS --- */
         
@@ -2185,6 +1846,19 @@ function updatePreview() {
     document.getElementById('modalImgDel').style.display = tempImg ? 'flex' : 'none';
 }
 
+function startLongPress(i) {
+    longPressTimer = setTimeout(() => {
+        let s = stock[i];
+        document.getElementById('stockViewName').innerText = s.name;
+        document.getElementById('stockViewPrice').innerText = s.price.toFixed(3) + " OMR";
+        let img = document.getElementById('stockViewImg');
+        if(s.img) { img.src = s.img; img.style.display = 'block'; } else { img.style.display='none'; }
+        history.pushState({modal: "view"}, "");
+        document.getElementById('stockViewModal').style.display = 'flex';
+    }, 600);
+}
+
+        function cancelLongPress() { clearTimeout(longPressTimer); }
         function handleDeleteAction() {
 
 }
@@ -2236,7 +1910,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // 4. Delete Function (Fixed Hindi Version)
 
 
-// --- 1. HANDLE DELETE ACTION (With Last Item Firebase Fix) ---
+
 function handleDeleteAction() {
     showCustomModal({
         title: "Deletion Confirmation",
@@ -2244,32 +1918,17 @@ function handleDeleteAction() {
         showInput: false,
         onYes: () => {
             if(mode === 'recipe') {
-                // Local array se delete karo
                 recipes.splice(activeIdx, 1);
-                
-                // --- FIREBASE SYNC (FORMULA) ---
-                if (typeof db !== 'undefined') {
-                    // Agar array khali ho gaya (recipes.length === 0), toh [] bhejo
-                    let dataToSync = (recipes.length === 0) ? [] : recipes;
-                    db.ref('shared_recipes_list').set(dataToSync);
-                }
+                // Recipe sync online
+                if (typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes);
             } else {
-                // Stock item delete karo
                 stock.splice(activeIdx, 1);
-                
-                // --- FIREBASE SYNC (FORMULA) ---
-                if (typeof db !== 'undefined') {
-                    let dataToSync = (stock.length === 0) ? [] : stock;
-                    db.ref('shared_stock_list').set(dataToSync);
-                }
+                // Stock sync online
+                if (typeof db !== 'undefined') db.ref('shared_stock_list').set(stock);
             }
             
             saveData(); 
-            
-            // UI Refresh: Delete ke turant baad app reset/refresh karein
-            if (typeof initApp === "function") {
-                initApp(); 
-            }
+            initApp();
             
             // Modal band karein
             document.getElementById('inputModalOverlay').style.display = 'none';
@@ -2279,88 +1938,24 @@ function handleDeleteAction() {
         }
     });
 }
-// --- 1. HANDLE DELETE ACTION (Fixed for Last Item & Firebase Sync) ---
-function handleDeleteAction() {
-    showCustomModal({
-        title: "Deletion Confirmation",
-        msg: "Are you sure you want to delete it permanently?",
-        showInput: false,
-        onYes: () => {
-            if(mode === 'recipe') {
-                // Local array se item nikalein
-                recipes.splice(activeIdx, 1);
-                
-                // --- FIREBASE SYNC FORMULA ---
-                if (typeof db !== 'undefined') {
-                    // Agar array 0 ho jaye toh Firebase ko khali array [] force karein
-                    let finalData = (recipes.length === 0) ? [] : recipes;
-                    db.ref('shared_recipes_list').set(finalData)
-                      .then(() => console.log("Recipe Deleted Successfully"))
-                      .catch(err => console.error("Firebase Error:", err));
-                }
-            } else {
-                // Stock item delete karein
-                stock.splice(activeIdx, 1);
-                
-                // --- FIREBASE SYNC FORMULA ---
-                if (typeof db !== 'undefined') {
-                    let finalStock = (stock.length === 0) ? [] : stock;
-                    db.ref('shared_stock_list').set(finalStock);
-                }
-            }
-            
-            // Local storage update karein
-            saveData(); 
-            
-            // UI REFRESH: Screen se card hatane ke liye
-            if (typeof initApp === "function") {
-                initApp(); 
-            }
-            
-            // Modals band karein
-            document.getElementById('inputModalOverlay').style.display = 'none';
-            if (typeof smartClose === "function") smartClose(); 
-            
-            showToast("Permanently Deleted Online", "error");
-        }
-    });
-}
 
-// --- 2. DELETE CATEGORY (Same Formula for Categories) ---
+
+
 function deleteCat(i) {
     showCustomModal({
         title: "DELETE CATEGORY?",
-        msg: "Deleting this category will not delete the recipes.",
+        msg: "Deleting this category will not delete the recipes, but will remove their category tag.",
         showInput: false,
         onYes: () => {
             cats.splice(i, 1);
-
-            if (typeof db !== 'undefined') {
-                // Last category delete hone par [] bhejien
-                let catSync = (cats.length === 0) ? [] : cats;
-                db.ref('shared_categories').set(catSync)
-                  .then(() => {
-                      showToast("Category Deleted Online", "error");
-                      if(typeof initApp === "function") initApp();
-                  });
-            }
-
             saveData();
-            if(typeof renderCatFilters === "function") renderCatFilters();
-            if(typeof smartClose === "function") smartClose();
+            renderCatFilters();
         }
     });
 }
 
-
-// --- 3. MODAL CONFIRMATION HANDLER ---
-// Ye line aapke modal confirmation ko handle karegi
-const confirmBtn = document.getElementById('confirmYesBtn');
-if(confirmBtn) {
-    confirmBtn.onclick = () => closeConfirm(true);
-}
-
-
+// Ye line batati hai ki jab "OK" button dabega tab confirm logic chalna chahiye
+document.getElementById('confirmYesBtn').onclick = () => closeConfirm(true);
 
       
     
@@ -2425,46 +2020,6 @@ function showToast(msg, isError = false) {
     items.splice(toIdx, 0, item);
     saveData();
     renderTable();
-}
-
-
-function restoreShareCode() {
-    const code = document.getElementById('shareRestoreInput').value.trim();
-    if (!code) return showToast("Please paste a code first!", "error");
-
-    try {
-        const decoded = JSON.parse(code);
-        
-        // 1. Local Variables update karein
-        if (decoded.s) stock = decoded.s;
-        if (decoded.r) recipes = decoded.r;
-        if (decoded.c) cats = decoded.c;
-
-        // 2. LOCAL STORAGE mein save karein (Aapke phone ke liye)
-        saveData();
-
-        // 3. FIREBASE SYNC (Sabse Important Fix)
-        // Isse data Online jayega aur Madam ko bhi dikhega
-        if (typeof db !== 'undefined') {
-            db.ref('shared_stock_list').set(stock);
-            db.ref('shared_recipes_list').set(recipes);
-            db.ref('shared_categories').set(cats);
-        }
-
-        // 4. UI REFRESH karein
-        renderCatFilters();
-        renderRecipes();
-        renderStock();
-
-        // Modal band karein aur input saaf karein
-        document.getElementById('shareRestoreInput').value = "";
-        showToast("Online Data Synced! ✅");
-        smartClose();
-
-    } catch (e) {
-        console.error(e);
-        showToast("Invalid JSON Code!", "error");
-    }
 }
 
     // --- SMART SHARE LOGIC ---
@@ -3019,7 +2574,7 @@ db.ref('shared_stock_list').on('value', (snapshot) => {
         
         <h2 style="margin-top:0; color: #1e293b; font-size: 22px; font-weight: 800; letter-spacing: 1px;">DATA</h2>
         
-        <div style="background: #f8fafc; padding: 12px 15px; border-radius: 14px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0;">
+        <div style="background: #f8fafc; padding: 12px 15px; border-radius: 14px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0;">
             <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;"></span>
             <span id="displayDeviceId" style="font-size: 12px; font-family: 'Courier New', monospace; color: #0f172a; background: #fff; padding: 4px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">Loading...</span>
         </div>
@@ -3030,19 +2585,20 @@ db.ref('shared_stock_list').on('value', (snapshot) => {
             <button id="btn-all" onclick="toggleAllShare()" style="flex: 1; padding: 12px; border: none; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 600; font-size: 11px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);">SELECT ALL</button>
         </div>
 
-<!-- <div style="display: flex; gap: 10px; margin-bottom: px;">
+<div style="display: flex; gap: 10px; margin-bottom: 10px;">
   
-<button class="btn-blue" style="flex:1; background:#2ecc71;" onclick="downloadJSONFile()">📥 DOWNLOAD JSON</button></div>
- -->
-                <div style="margin-top:5px; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 18px; text-align: center; background: #f1f5f9; transition: 0.3s;">
-            <p style="font-size: 11px; font-weight: 700; margin-bottom: 5px; color: #475569;">UPLOAD BACKUP FILE (.JSON)</p>
+  <button class="btn-blue" style="flex:1; background:#2ecc71;" onclick="downloadJSONFile()">📥 DOWNLOAD JSON</button>
+</div>
+
+                <div style="margin-top:15px; border: 2px dashed #cbd5e1; padding: 15px; border-radius: 18px; text-align: center; background: #f1f5f9; transition: 0.3s;">
+            <p style="font-size: 11px; font-weight: 700; margin-bottom: 8px; color: #475569;">UPLOAD BACKUP FILE (.JSON)</p>
             <input type="file" id="importFile" accept=".json" style="font-size: 12px; width: 100%; color: #64748b;" onchange="importJSONFile(this)">
         </div>
 
 
-<div id="shareItemsList" style="max-height: 450px; overflow-y: auto; margin: 5px 0; padding: 5px;">
+<div id="shareItemsList" style="max-height: 450px; overflow-y: auto; margin: 20px 0; padding: 5px;">
     
-    <div style="background: white; border-radius: 12px; margin-bottom: 5px; padding: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: all 0.2s ease;">
+    <div style="background: white; border-radius: 12px; margin-bottom: 12px; padding: 15px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #eee; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: all 0.2s ease;">
         <div style="display: flex; align-items: center; gap: 15px;">
             <span style="font-family: monospace; font-weight: bold; color: #b2bec3; font-size: 13px; width: 25px;">1</span>
             <div style="display: flex; flex-direction: column;">
@@ -3066,11 +2622,11 @@ db.ref('shared_stock_list').on('value', (snapshot) => {
 
 </div>
             
-        <button class="btn-purple" style="width:100%; padding: 14px; border-radius: 14px; background: #8b5cf6; color: white; border: none; font-weight: 700; font-size: 14px; margin-bottom: 5px; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);" onclick="generateShareCode()">
+        <button class="btn-purple" style="width:100%; padding: 14px; border-radius: 14px; background: #8b5cf6; color: white; border: none; font-weight: 700; font-size: 14px; margin-bottom: 12px; cursor: pointer; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);" onclick="generateShareCode()">
             <i class="fas fa-magic"></i> GENERATE BACKUP CODE
         </button>
 
-        <div style="position: relative; margin-bottom: 5px; width: 100%;">
+        <div style="position: relative; margin-bottom: 15px; width: 100%;">
             <textarea id="shareCodeOutput" 
                       style="width:100%; height:70px; border-radius:14px; padding:12px; font-size:12px; border:1px solid #e2e8f0; background:#f8fafc; color: #334155; display: block; resize: none;" 
                       placeholder="The code will come here..." readonly></textarea>
@@ -3085,7 +2641,7 @@ db.ref('shared_stock_list').on('value', (snapshot) => {
         <div>
             <p style="font-size:13px; font-weight:700; color: #1e293b; margin-bottom:10px;">Paste & Add:</p>
             
-            <div style="position: relative; margin-bottom: 5px; width: 100%;">
+            <div style="position: relative; margin-bottom: 15px; width: 100%;">
                 <textarea id="shareRestoreInput" 
                           style="width:100%; height:100px; border-radius:18px; padding:12px; font-size:13px; background:#fff; color:#1e293b; border:2px solid #3b82f6; display: block; outline: none;" 
                           placeholder="Paste the code here..."
