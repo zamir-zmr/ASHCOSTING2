@@ -1123,14 +1123,50 @@ let longPressTimer;
 
 
 
-
 function initApp() {
-    
+    // 1. FIREBASE REAL-TIME SYNC (Zamir & Madam Sync Fix)
+    if (typeof db !== 'undefined') {
+        
+        // STOCK SYNC: Jab bhi Madam add karengi, aapka phone Bina Refresh kiye update hoga
+        db.ref('shared_stock_list').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                stock = data;
+                // Local memory update taaki offline bhi chale
+                localStorage.setItem('stock_list', JSON.stringify(stock));
+                renderStock(); 
+                console.log("Stock updated from Cloud!");
+            }
+        });
+
+        // RECIPES SYNC: Madam recipe banayengi toh aapko turant dikhega
+        db.ref('shared_recipes_list').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                recipes = data;
+                localStorage.setItem('recipes_list', JSON.stringify(recipes));
+                renderRecipes();
+                console.log("Recipes updated from Cloud!");
+            }
+        });
+
+        // CATEGORIES SYNC
+        db.ref('shared_categories').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                cats = data;
+                localStorage.setItem('categories_list', JSON.stringify(cats));
+                renderCatFilters();
+            }
+        });
+    }
+
+    // 2. Initial Renders
     renderCatFilters();
     renderRecipes();
     renderStock();
 
-    // 3. Logo loading logic
+    // 3. Logo loading logic (Aapka original logic)
     const saved = localStorage.getItem('ASH_CUSTOM_LOGO');
     if(saved) {
         const imgEl = document.getElementById('appLogoImg');
@@ -1144,6 +1180,7 @@ function initApp() {
         }
     }
 }
+
 
 
 // Gallery Upload Function
@@ -1465,16 +1502,18 @@ function submitInputModal() {
             price: parseFloat(priceInput) || 0,
             base: parseFloat(baseInput) || 1000, 
             total: parseFloat(baseInput) || 1000,
-            img: tempImg, // Photo sync line
+            img: tempImg, 
             updatedAt: Date.now()
         };
 
         if (activeIdx !== null) stock[activeIdx] = item;
         else stock.push(item);
         
-        // ONLINE SYNC
-        if (typeof db !== 'undefined') db.ref('shared_stock_list').set(stock);
-        showToast("Stock Synced Online ✅");
+        // ONLINE SYNC - Firebase ko data bhejna
+        if (typeof db !== 'undefined') {
+            db.ref('shared_stock_list').set(stock);
+        }
+        showToast("Stock Saved & Synced ✅");
 
     } else {
         let cat = document.getElementById('recipeCatSelect').value;
@@ -1494,11 +1533,14 @@ function submitInputModal() {
         if (activeIdx !== null) recipes[activeIdx] = recipeData;
         else recipes.push(recipeData);
 
-        // ONLINE SYNC
-        if (typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes);
-        showToast("Recipe Synced Online ✅");
+        // ONLINE SYNC - Firebase ko data bhejna
+        if (typeof db !== 'undefined') {
+            db.ref('shared_recipes_list').set(recipes);
+        }
+        showToast("Recipe Saved & Synced ✅");
     }
 
+    // Local Storage update
     saveData();     
     renderStock();
     renderRecipes();
