@@ -1378,6 +1378,11 @@ function openPanel(id) {
     document.getElementById(id).style.display = 'flex'; 
 }
 
+function closePanel(id) { 
+    history.back(); 
+}
+
+
 function smartClose() { 
     if(window.history.state) history.back();
     else document.querySelectorAll('.panel, .modal-overlay').forEach(el => el.style.display = 'none');
