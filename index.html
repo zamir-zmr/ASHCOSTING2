@@ -1661,39 +1661,11 @@ function openEditor(i) {
 
 // --- 3. IMPORTANT: SYNC HELPER (Ye add karna zaroori hai) ---
 // Ye function ensure karega ki jab bhi aap item add karein, wo Firebase par jaye
-function syncAllToCloud() {
-    saveData(); // Pehle mobile mein save karega
-    if (typeof db !== 'undefined') {
-        // Firebase par update bhej raha hai taaki Madam ko bhi dikhe
-        db.ref('shared_stock_list').set(stock);
-        db.ref('shared_recipes_list').set(recipes);
-        console.log("Cloud Sync Done ✅");
-    }
-}
+
 
 // --- 4. FIX FOR ADDING ITEMS ---
 // Aapke addIng function mein ye line add karein (agar pehle se nahi hai)
-function addIng(n, p, b) {
-    let finalBase = b || 1000;
-    
-    // Recipe mein naya item add ho raha hai
-    recipes[activeIdx].items.push({ 
-        name: n, 
-        price: p, 
-        total: finalBase, 
-        used: 0 
-    });
 
-    // UI saaf karo
-    let sInp = document.querySelector('#editorPanel input[oninput*="showSuggest"]');
-    if(sInp) sInp.value = '';
-    document.getElementById('suggestions').innerHTML = ''; 
-
-    // FIREBASE UPDATE - Ye sabse zaroori hai!
-    syncAllToCloud(); 
-    
-    renderTable(); 
-}
 
 
 let r = recipes[i];
