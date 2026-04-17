@@ -1210,25 +1210,25 @@ function uploadAppLogo(input) {
     }
 }
 
-        function saveData() { 
-            localStorage.setItem('ASH_R', JSON.stringify(recipes)); 
-            localStorage.setItem('ASH_S', JSON.stringify(stock)); 
-            localStorage.setItem('ASH_C', JSON.stringify(cats)); 
-        }
-        
-        // --- BACKUP & RESTORE LOGIC ---
-// --- UPDATED BACKUP LOGIC (NO IMAGES) ---
+function saveData() { 
+    localStorage.setItem('ASH_R', JSON.stringify(recipes)); 
+    localStorage.setItem('ASH_S', JSON.stringify(stock)); 
+    localStorage.setItem('ASH_C', JSON.stringify(cats)); 
+}
 
+// --- NEW SYNC HELPER FOR CATEGORIES ---
+function syncCatsToCloud() {
+    saveData(); // Local save
+    if (typeof db !== 'undefined') {
+        db.ref('shared_categories').set(cats); // Madam ke phone ke liye
+        console.log("Categories Synced to Cloud ✅");
+    }
+}
 
-
-
-        
-
-        /* --- CATEGORY LOGIC --- */
-
+/* --- CATEGORY LOGIC --- */
 
 function renderCatFilters() {
-    // Top bar aur dropdown ka logic (Aapka existing code)
+    // Top bar aur dropdown ka logic
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
     cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
     document.getElementById('catFilterBar').innerHTML = html;
@@ -1237,29 +1237,23 @@ function renderCatFilters() {
     cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
     document.getElementById('recipeCatSelect').innerHTML = drop;
 
-    // Category Manager List (Full Row Draggable Design)
+    // Category Manager List
     document.getElementById('catManagerList').innerHTML = cats.map((c, i) => `
     <div class="draggable-item" data-name="${c}" style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; touch-action: pan-y;">
         
         <div style="display:flex; align-items:center; flex:1;">
-
             <b class="cat-name-text" style="color:var(--accent)">${c}</b>
         </div>
 
         <div style="display:flex; gap:15px; align-items:center;">
             <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); editCategory(${i})"></i>
             
-            <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); (${i})"></i>
+            <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); deleteCat(${i})"></i>
         </div>
     </div>`).join('');
 
-
-    // --- YE LINE FIX KAREGI ---
-    // Naya category bante hi Sortable ko re-initialize karega
     setTimeout(initCatSortable, 200); 
 }
-
-// Naya Function: Jo order save karega
 
 function initCatSortable() {
     let el = document.getElementById('catManagerList');
@@ -1269,9 +1263,9 @@ function initCatSortable() {
 
     el.sortableInstance = Sortable.create(el, {
         animation: 150,
-        delay: 500,             // 0.5 second ka long press
-        delayOnTouchOnly: true, // Sirf mobile touch par delay hoga
-        touchStartThreshold: 5, // 5px tak ungli hilegi toh cancel nahi hoga
+        delay: 500,             
+        delayOnTouchOnly: true, 
+        touchStartThreshold: 5, 
         ghostClass: 'sortable-ghost',
         onEnd: function() {
             let newOrder = [];
@@ -1279,71 +1273,58 @@ function initCatSortable() {
                 newOrder.push(item.innerText.trim());
             });
             cats = newOrder;
-            saveData();
-            refreshOtherUI(); // Top bar refresh
-            showToast("Saved");
+            
+            // --- SYNC FIX ---
+            syncCatsToCloud(); // Ab drag karne ke baad Madam ke phone par order change hoga
+            refreshOtherUI(); 
+            showToast("Order Saved & Synced ✅");
         }
     });
 }
 
-
-// Sirf top bar refresh karne ke liye naya function
 function refreshTopFilters() {
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
     cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
     document.getElementById('catFilterBar').innerHTML = html;
 }
 
-
 function refreshOtherUI() {
-    // Top bar filters update
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
     cats.forEach(c => html += `<div class="cat-item ${currentFilter===c?'active':''}" onclick="filterBy('${c}')">${c.toUpperCase()}</div>`);
     document.getElementById('catFilterBar').innerHTML = html;
     
-    // Recipe dropdown update
     let drop = `<option value="">No Category</option>`;
     cats.forEach(c => drop += `<option value="${c}">${c}</option>`);
     document.getElementById('recipeCatSelect').innerHTML = drop;
 }
 
+function filterBy(c) { currentFilter = c; renderRecipes(); renderCatFilters(); }
 
-
-        function filterBy(c) { currentFilter = c; renderRecipes(); renderCatFilters(); }
-        
-        
-        
 function addCategory() {
     let val = document.getElementById('newCatInp').value.trim();
     
-    // 1. Khali input 
     if(!val) {
         showToast("Please enter a category name!", true);
         return;
     }
 
-    // 2. Duplicate 
     let exists = cats.find(c => c.toLowerCase() === val.toLowerCase());
-
     if(exists) {
-        // Agar pehle se hai, toh message dikhao aur wahi ruk jao
-        showToast(`'${val}'  already exists in Category`, true);
+        showToast(`'${val}' already exists!`, true);
         return; 
     }
 
-    // 3. Naya add karo agar upar wali conditions fail ho gayi
     cats.push(val); 
     document.getElementById('newCatInp').value = ''; 
-    saveData(); 
+    
+    // --- SYNC FIX ---
+    syncCatsToCloud(); // Nayi category Madam ko turant dikhegi
+    
     renderCatFilters(); 
     showToast("Category Added Successfully!"); 
 }
 
-
-        
-
-
-        function editCategory(i) {
+function editCategory(i) {
     let oldName = cats[i];
     
     showCustomModal({
@@ -1354,32 +1335,52 @@ function addCategory() {
         onYes: (newName) => {
             let finalName = newName ? newName.trim() : "";
             
-            // 1. Agar naam khali hai ya purana hi hai
             if (!finalName || finalName === oldName) return;
 
-            // 2. Duplicate 
             let exists = cats.find((c, idx) => c.toLowerCase() === finalName.toLowerCase() && idx !== i);
-
             if(exists) {
                 showToast(`'${finalName}' Already Exists!`, true);
-                
-                // --- YEHA BADLAV HAI ---
-                // Pop-up ko khula rakhne ke liye hum function ko phir se call karenge
                 setTimeout(() => editCategory(i), 100); 
                 return; 
             }
 
-            // 3. Save Logic
+            // Sabhi recipes mein category name update karein
             recipes.forEach(r => { if (r.category === oldName) r.category = finalName; });
             cats[i] = finalName; 
-            saveData(); 
+            
+            // --- SYNC FIX ---
+            syncCatsToCloud(); // Rename hote hi Madam ke phone par bhi update hoga
+            if (typeof db !== 'undefined') {
+                db.ref('shared_recipes_list').set(recipes); // Recipes bhi sync karni padegi category rename ke liye
+            }
+
             renderCatFilters(); 
             renderRecipes();
-            showToast("Category Updated!");
+            showToast("Category Updated & Synced!");
         }
     });
 }
 
+// Function for deleting (Aapne deleteCat manga tha pichle message mein)
+function deleteCat(i) {
+    let oldName = cats[i];
+    showCustomModal({
+        title: "DELETE CATEGORY?",
+        msg: "Deleting this category will not delete recipes.",
+        showInput: false,
+        onYes: () => {
+            cats.splice(i, 1);
+            recipes.forEach(r => { if (r.category === oldName) r.category = ""; });
+            
+            syncCatsToCloud();
+            if (typeof db !== 'undefined') db.ref('shared_recipes_list').set(recipes);
+            
+            renderCatFilters();
+            renderRecipes();
+            showToast("Deleted!");
+        }
+    });
+}
 
 
 
