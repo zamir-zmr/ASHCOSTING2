@@ -1511,7 +1511,7 @@ function submitInputModal() {
         if (activeIdx !== null) stock[activeIdx] = item;
         else stock.push(item);
         
-        // ONLINE SYNC - Stock update
+        // ONLINE SYNC - Firebase ko data bhejna
         if (typeof db !== 'undefined') {
             db.ref('shared_stock_list').set(stock);
         }
@@ -1535,13 +1535,14 @@ function submitInputModal() {
         if (activeIdx !== null) recipes[activeIdx] = recipeData;
         else recipes.push(recipeData);
 
-        // ONLINE SYNC - Recipe update
+        // ONLINE SYNC - Firebase ko data bhejna
         if (typeof db !== 'undefined') {
             db.ref('shared_recipes_list').set(recipes);
         }
         showToast("Recipe Saved & Synced ✅");
     }
 
+    // Local Storage update
     saveData();     
     renderStock();
     renderRecipes();
@@ -1634,6 +1635,7 @@ function renderTable() {
     });
 
     document.getElementById('ingredientList').innerHTML = html;
+    
     if (typeof initDragLogic === "function") initDragLogic();
     calcTotal();
 }
@@ -1652,7 +1654,7 @@ function initDragLogic() {
             items.splice(evt.newIndex, 0, movedItem);
             
             saveData();
-            syncRecipeToCloud(); // Cloud update on reorder
+            syncRecipeToCloud(); 
             calcTotal(); 
         }
     });
@@ -1669,6 +1671,7 @@ function upd(i, k, v) {
     if(rows[i]) {
         rows[i].querySelector('b').innerText = rowCost.toFixed(3);
     }
+
     calcTotal(); 
 }
 
@@ -1694,15 +1697,40 @@ function calcTotal() {
     document.getElementById('allTotalDisplay').innerText = subTotal.toFixed(3);
     document.getElementById('grandTotal').innerText = final.toFixed(3) + " OMR";
     
-    r.packaging = pack; r.effortPct = effP; r.marginPct = sellP;
+    r.packaging = pack; 
+    r.effortPct = effP; 
+    r.marginPct = sellP;
+}
+
+function showSuggest(q) {
+    if(!q) { 
+        document.getElementById('suggestions').innerHTML = ''; 
+        return; 
+    }
+    
+    let fits = stock.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
+    
+    document.getElementById('suggestions').innerHTML = fits.map(f => {
+        let b = f.base || 1000; 
+        
+        return `
+            <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;" 
+                 onclick="addIng('${f.name}', ${f.price}, ${b})"> 
+                ${f.name} 
+                <span style="float:right; color:var(--primary)">
+                    ${f.price.toFixed(3)} OMR / ${b} G
+                </span>
+            </div>`;
+    }).join('');
 }
 
 function addIng(n, p, b) {
     let finalBase = b || 1000;
+
     recipes[activeIdx].items.push({ 
         name: n, 
         price: p, 
-        total: finalBase,
+        total: finalBase, 
         used: 0 
     });
 
@@ -1710,24 +1738,25 @@ function addIng(n, p, b) {
     if(sInp) sInp.value = '';
     
     document.getElementById('suggestions').innerHTML = ''; 
-    syncRecipeToCloud(); // Cloud update on add
+    syncRecipeToCloud(); 
     renderTable(); 
 }
 
-// --- NEW SYNC HELPER ---
+// Naya sync helper function jo maine add kiya hai cloud sync ke liye
 function syncRecipeToCloud() {
-    saveData(); // Local save
+    saveData();
     if (typeof db !== 'undefined') {
         db.ref('shared_recipes_list').set(recipes);
     }
 }
 
 function saveAndExit() { 
-    syncRecipeToCloud(); // Ensure cloud is updated before exit
+    syncRecipeToCloud(); 
     smartClose(); 
 }
 
 function clearPhoto() { tempImg = ''; updatePreview(); }
+
 
 
         /* --- IMAGE & LONG PRESS --- */
