@@ -1446,6 +1446,8 @@ window.onpopstate = function(event) {
 };
 
 // --- 2. INPUT MODAL LOGIC ---
+
+
 function openInputModal(type, idx = null) {
     mode = type; 
     activeIdx = idx;
@@ -1509,7 +1511,7 @@ function submitInputModal() {
         if (activeIdx !== null) stock[activeIdx] = item;
         else stock.push(item);
         
-        // ONLINE SYNC - Firebase ko data bhejna
+        // ONLINE SYNC - Stock update
         if (typeof db !== 'undefined') {
             db.ref('shared_stock_list').set(stock);
         }
@@ -1533,14 +1535,13 @@ function submitInputModal() {
         if (activeIdx !== null) recipes[activeIdx] = recipeData;
         else recipes.push(recipeData);
 
-        // ONLINE SYNC - Firebase ko data bhejna
+        // ONLINE SYNC - Recipe update
         if (typeof db !== 'undefined') {
             db.ref('shared_recipes_list').set(recipes);
         }
         showToast("Recipe Saved & Synced ✅");
     }
 
-    // Local Storage update
     saveData();     
     renderStock();
     renderRecipes();
@@ -1568,9 +1569,6 @@ function renderStock() {
         </div>`).join('');
 }
 
-
-
-
 function renderRecipes() {
     let filtered = (currentFilter === 'ALL') ? recipes : recipes.filter(r => r.category === currentFilter);
     document.getElementById('recipeGrid').innerHTML = filtered.map((r, i) => {
@@ -1590,40 +1588,34 @@ function renderRecipes() {
         </div>`}).join('');
 }
 
-
-
-
-
-        /* --- CALCULATIONS --- */
-        function openEditor(i) {
-            activeIdx = i; let r = recipes[i];
-            history.pushState({modal: "editor"}, "");
-            document.getElementById('activeTitle').innerText = r.name;
-            document.getElementById('packInp').value = r.packaging || 0;
-            document.getElementById('effInp').value = r.effortPct || 0;
-            document.getElementById('sellInp').value = r.marginPct || 0;
-            document.getElementById('editorPanel').style.display = 'flex';
-            renderTable();
-        }
+/* --- CALCULATIONS --- */
+function openEditor(i) {
+    activeIdx = i; let r = recipes[i];
+    history.pushState({modal: "editor"}, "");
+    document.getElementById('activeTitle').innerText = r.name;
+    document.getElementById('packInp').value = r.packaging || 0;
+    document.getElementById('effInp').value = r.effortPct || 0;
+    document.getElementById('sellInp').value = r.marginPct || 0;
+    document.getElementById('editorPanel').style.display = 'flex';
+    renderTable();
+}
         
 function renderTable() {
     let r = recipes[activeIdx];
     let html = "";
 
     (r.items || []).forEach((it, i) => {
-        // Stock se latest data dhundna
         let latestItem = stock.find(s => s.name.trim().toLowerCase() === it.name.trim().toLowerCase());
         
         if(latestItem) {
             it.price = latestItem.price;
-            // CHANGE: Fallback changed from 1000 to 1
             it.total = latestItem.base || latestItem.total || 1000;
         }
 
         html += `
         <div class="row-item" data-id="${i}" style="touch-action: pan-y; display: grid; grid-template-columns: 28px 1.5fr 42px 42px 42px 55px; align-items: center; gap: 0; padding: 6px 2px; margin: 4px 0; background: #fff; border: 1px solid #f0f0f0; border-left: 4px solid #00D2D3; border-radius: 6px; box-shadow: none;">
             
-            <div onclick="recipes[activeIdx].items.splice(${i},1); renderTable()" style="color:#ff7675; cursor:pointer; text-align: center; font-size: 14px; border-right: 1px solid #eee; height: 24px; display: flex; align-items: center; justify-content: center;">✕</div>
+            <div onclick="recipes[activeIdx].items.splice(${i},1); syncRecipeToCloud(); renderTable();" style="color:#ff7675; cursor:pointer; text-align: center; font-size: 14px; border-right: 1px solid #eee; height: 24px; display: flex; align-items: center; justify-content: center;">✕</div>
             
             <div style="padding-left: 6px; border-right: 1px solid #eee; overflow: hidden;">
                 <input type="text" value="${it.name}" oninput="upd(${i},'name',this.value)" style="width: 100%; font-size: 12px; border:none; background:transparent; font-weight: 600; color: #2d3436; outline: none; height: 24px;">
@@ -1642,72 +1634,51 @@ function renderTable() {
     });
 
     document.getElementById('ingredientList').innerHTML = html;
-    
     if (typeof initDragLogic === "function") initDragLogic();
     calcTotal();
 }
 
-
-// Ye naya function apne code mein niche paste kar dein
 function initDragLogic() {
     const el = document.getElementById('ingredientList');
-    
-    // Purane instance ko khatam karke naya banata hai
     if (window.listSorter) window.listSorter.destroy();
 
     window.listSorter = Sortable.create(el, {
         animation: 150,
-        delay: 400, // 0.4 second long press karein phir drag karein
+        delay: 400,
         delayOnTouchOnly: true,
         onEnd: function (evt) {
             let items = recipes[activeIdx].items;
-            // Array mein item ki jagah badalna
             const movedItem = items.splice(evt.oldIndex, 1)[0];
             items.splice(evt.newIndex, 0, movedItem);
             
             saveData();
-            // Sirf calculation update karein, pura table nahi warna focus bigad jayega
+            syncRecipeToCloud(); // Cloud update on reorder
             calcTotal(); 
         }
     });
 }
 
-
-
-
-
-        
-        
-        
-
-        function upd(i, k, v) { 
+function upd(i, k, v) { 
     let recipe = recipes[activeIdx];
     recipe.items[i][k] = (k === 'name') ? v : parseFloat(v) || 0; 
 
-    // Sirf us row ki COST ko update karein (taaki keyboard na band ho)
     let item = recipe.items[i];
     let rowCost = (item.price / item.total) * item.used || 0;
     
-    // Row ke cost display ko live update karna
     let rows = document.querySelectorAll('#ingredientList .row-item');
     if(rows[i]) {
         rows[i].querySelector('b').innerText = rowCost.toFixed(3);
     }
-
-    // Neeche ka Grand Total update karein
     calcTotal(); 
 }
+
 function calcTotal() {
     let r = recipes[activeIdx];
     let recipeT = 0;
     
     (r.items || []).forEach(it => {
-        // Stock material se latest base dhundna
         let stockItem = stock.find(s => s.name === it.name);
-        
-        // CHANGE: Fallback changed from 1000 to 1
         let currentBase = (stockItem && stockItem.base) ? stockItem.base : (it.total || 1000);
-        
         recipeT += (it.price / currentBase) * it.used || 0;
     });
     
@@ -1726,54 +1697,38 @@ function calcTotal() {
     r.packaging = pack; r.effortPct = effP; r.marginPct = sellP;
 }
 
-function showSuggest(q) {
-    if(!q) { 
-        document.getElementById('suggestions').innerHTML = ''; 
-        return; 
-    }
-    
-    let fits = stock.filter(s => s.name.toLowerCase().includes(q.toLowerCase()));
-    
-    document.getElementById('suggestions').innerHTML = fits.map(f => {
-        // CHANGE: Default base changed from 1000 to 1
-        let b = f.base || 1000; 
-        
-        return `
-            <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;" 
-                 onclick="addIng('${f.name}', ${f.price}, ${b})"> 
-                ${f.name} 
-                <span style="float:right; color:var(--primary)">
-                    ${f.price.toFixed(3)} OMR / ${b} G
-                </span>
-            </div>`;
-    }).join('');
-}
-
-
 function addIng(n, p, b) {
-    // b wo gram hai jo aapne stock mein save kiya (e.g. 500)
-    // Agar b nahi mil raha toh default 1000
     let finalBase = b || 1000;
-
     recipes[activeIdx].items.push({ 
         name: n, 
         price: p, 
-        total: finalBase, // Ab ye hamesha 1000 nahi hoga!
+        total: finalBase,
         used: 0 
     });
 
-    // Search box saaf karo
     let sInp = document.querySelector('#editorPanel input[oninput*="showSuggest"]');
     if(sInp) sInp.value = '';
     
     document.getElementById('suggestions').innerHTML = ''; 
+    syncRecipeToCloud(); // Cloud update on add
     renderTable(); 
 }
 
-        
-        
-        function saveAndExit() { saveData(); smartClose(); }
-        function clearPhoto() { tempImg = ''; updatePreview(); }
+// --- NEW SYNC HELPER ---
+function syncRecipeToCloud() {
+    saveData(); // Local save
+    if (typeof db !== 'undefined') {
+        db.ref('shared_recipes_list').set(recipes);
+    }
+}
+
+function saveAndExit() { 
+    syncRecipeToCloud(); // Ensure cloud is updated before exit
+    smartClose(); 
+}
+
+function clearPhoto() { tempImg = ''; updatePreview(); }
+
 
         /* --- IMAGE & LONG PRESS --- */
         
@@ -2512,7 +2467,7 @@ window.addEventListener('click', (e) => {
             <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
               
               <h2 
-            style="font-size: 10px; font-family: 'Courier New', monospace; color: #0f172a; background: #fff; padding: 4px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">version 3</span>
+            style="font-size: 10px; font-family: 'Courier New', monospace; color: #0f172a; background: #fff; padding: 4px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">version 4</span>
             </h2>
             </span>
             
