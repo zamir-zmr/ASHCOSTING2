@@ -1694,6 +1694,8 @@ function addIng(n, p, b) {
     
     renderTable(); 
 }
+
+
 let r = recipes[i];
     history.pushState({modal: "editor"}, "");
     document.getElementById('activeTitle').innerText = r.name;
@@ -1827,23 +1829,7 @@ function showSuggest(q) {
     }).join('');
 }
 
-function addIng(n, p, b) {
-    let finalBase = b || 1000;
 
-    recipes[activeIdx].items.push({ 
-        name: n, 
-        price: p, 
-        total: finalBase, 
-        used: 0 
-    });
-
-    let sInp = document.querySelector('#editorPanel input[oninput*="showSuggest"]');
-    if(sInp) sInp.value = '';
-    
-    document.getElementById('suggestions').innerHTML = ''; 
-    syncRecipeToCloud(); 
-    renderTable(); 
-}
 
 // Naya sync helper function jo maine add kiya hai cloud sync ke liye
 function syncRecipeToCloud() {
