@@ -1657,24 +1657,7 @@ function openEditor(i) {
 
 
 // --- 2. RENDER RECIPES (MODIFIED) ---
-function renderRecipes() {
-    let filtered = (currentFilter === 'ALL') ? recipes : recipes.filter(r => r.category === currentFilter);
-    document.getElementById('recipeGrid').innerHTML = filtered.map((r, i) => {
-        let realIdx = recipes.indexOf(r);
-        
-        let photoContent = r.img 
-            ? `<img src="${r.img}" onerror="this.style.opacity='0'">` 
-            : `<div style="font-size: 75px; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%; background: #f1f2f6; color: #dfe6e9;">🖼️</div>`;
 
-        return `
-        <div class="card" onclick="isManage ? openInputModal('recipe', ${realIdx}) : openEditor(${realIdx})">
-            <div class="card-img-box">${photoContent}</div>
-            <div class="card-info">
-                <span class="card-cat-tag">${r.category || 'NO CAT'}</span>
-                <b>${r.name}</b>
-            </div>
-        </div>`}).join('');
-}
 
 // --- 3. IMPORTANT: SYNC HELPER (Ye add karna zaroori hai) ---
 // Ye function ensure karega ki jab bhi aap item add karein, wo Firebase par jaye
