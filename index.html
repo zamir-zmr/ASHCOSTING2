@@ -1636,6 +1636,8 @@ function addIng(n, p, b) {
 function openEditor(i) {
     activeIdx = i; // --- 1. RENDER STOCK (MODIFIED) ---
 
+
+
 function renderStock() {
     const list = document.getElementById('stockList');
     if(!list) return;
@@ -1663,39 +1665,48 @@ function renderStock() {
         </div>`).join('');
 }
 
-let longPressTimer; // Timer variable define karna zaroori hai
+let longPressTimer; // Is variable ko check karein ki top par defined hai ya nahi
 
 function startLongPress(i) {
-    // Purana koi timer chal raha ho toh clear karein taaki double trigger na ho
+    // Purana koi timer chal raha ho toh pehle clear karein
     clearTimeout(longPressTimer); 
     
     longPressTimer = setTimeout(() => {
         let s = stock[i];
         
         // Modal mein details bharna
-        document.getElementById('stockViewName').innerText = s.name || "No Name";
-        document.getElementById('stockViewPrice').innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
+        const nameEl = document.getElementById('stockViewName');
+        const priceEl = document.getElementById('stockViewPrice');
+        const imgEl = document.getElementById('stockViewImg');
+        const modalEl = document.getElementById('stockViewModal');
+
+        if(nameEl) nameEl.innerText = s.name || "No Name";
+        if(priceEl) priceEl.innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
         
-        let img = document.getElementById('stockViewImg');
-        if(s.img) { 
-            img.src = s.img; 
-            img.style.display = 'block'; 
-        } else { 
-            img.style.display = 'none'; 
+        if(imgEl) {
+            if(s.img) { 
+                imgEl.src = s.img; 
+                imgEl.style.display = 'block'; 
+            } else { 
+                imgEl.style.display = 'none'; 
+            }
         }
 
         // --- BACK BUTTON FIX ---
-        history.pushState({modal: "view"}, "");
-        document.getElementById('stockViewModal').style.display = 'flex';
+        if(modalEl) {
+            history.pushState({modal: "view"}, "");
+            modalEl.style.display = 'flex';
+        }
         
         // Haptic Feedback (Vibration)
-        if(navigator.vibrate) navigator.vibrate(50);
-    }, 600);
+        if(navigator.vibrate) navigator.vibrate(60);
+    }, 600); // 0.6 second ka hold time
 }
 
 function cancelLongPress() { 
     clearTimeout(longPressTimer); 
 }
+
 
 
 // --- 2. RENDER RECIPES (MODIFIED) ---
