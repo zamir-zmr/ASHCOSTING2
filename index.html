@@ -1225,6 +1225,8 @@ function uploadAppLogo(input) {
         
 
         /* --- CATEGORY LOGIC --- */
+
+
 function renderCatFilters() {
     // Top bar aur dropdown ka logic (Aapka existing code)
     let html = `<div class="cat-item ${currentFilter==='ALL'?'active':''}" onclick="filterBy('ALL')">ALL</div>`;
@@ -1247,7 +1249,7 @@ function renderCatFilters() {
         <div style="display:flex; gap:15px; align-items:center;">
             <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); editCategory(${i})"></i>
             
-            <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); deleteCat(${i})"></i>
+            <i class="fas fa-trash" style="color:var(--danger); font-size:18px; cursor:pointer;" onclick="event.stopPropagation(); (${i})"></i>
         </div>
     </div>`).join('');
 
@@ -2033,15 +2035,28 @@ function handleDeleteAction() {
 
 
 
+
 function deleteCat(i) {
     showCustomModal({
         title: "DELETE CATEGORY?",
-        msg: "Deleting this category will not delete the recipes, but will remove their category tag.",
+        msg: "Deleting this category will not delete the recipes.",
         showInput: false,
         onYes: () => {
             cats.splice(i, 1);
+
+            if (typeof db !== 'undefined') {
+                // Last category delete hone par [] bhejien
+                let catSync = (cats.length === 0) ? [] : cats;
+                db.ref('shared_categories').set(catSync)
+                  .then(() => {
+                      showToast("Category Deleted Online", "error");
+                      if(typeof initApp === "function") initApp();
+                  });
+            }
+
             saveData();
-            renderCatFilters();
+            if(typeof renderCatFilters === "function") renderCatFilters();
+            if(typeof smartClose === "function") smartClose();
         }
     });
 }
