@@ -2034,38 +2034,14 @@ function handleDeleteAction() {
 
 
 function deleteCat(i) {
-    const catToDelete = cats[i]; // Jis category ko delete karna hai
-
     showCustomModal({
         title: "DELETE CATEGORY?",
-        msg: "Deleting this category will not delete the recipes, but will remove their category tag everywhere.",
+        msg: "Deleting this category will not delete the recipes, but will remove their category tag.",
         showInput: false,
         onYes: () => {
-            // 1. Local array se category delete karein
             cats.splice(i, 1);
-
-            // 2. Sabhi recipes mein se is category ka naam hata dein (Optional but Recommended)
-            recipes.forEach(r => {
-                if(r.category === catToDelete) {
-                    r.category = ""; // Ya "Uncategorized" set kar sakte hain
-                }
-            });
-
-            // 3. FIREBASE ONLINE SYNC
-            if (typeof db !== 'undefined') {
-                // Categories update karein
-                db.ref('shared_categories').set(cats);
-                
-                // Recipes update karein (kyunki unka category tag change hua hai)
-                db.ref('shared_recipes_list').set(recipes);
-            }
-
-            // 4. Local storage aur UI update
             saveData();
             renderCatFilters();
-            renderRecipes(); // Taki cards par se purana tag hat jaye
-            
-            showToast("Category Deleted & Synced ✅");
         }
     });
 }
