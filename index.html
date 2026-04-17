@@ -1653,6 +1653,37 @@ function renderStock() {
         </div>`).join('');
 }
 
+function startLongPress(i) {
+    // 600ms tak daba ke rakhne par popup aayega
+    longPressTimer = setTimeout(() => {
+        let s = stock[i];
+        
+        // Modal mein details bharna
+        document.getElementById('stockViewName').innerText = s.name || "No Name";
+        document.getElementById('stockViewPrice').innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
+        
+        let img = document.getElementById('stockViewImg');
+        if(s.img) { 
+            img.src = s.img; 
+            img.style.display = 'block'; 
+        } else { 
+            img.style.display = 'none'; 
+        }
+
+        // --- BACK BUTTON FIX ---
+        // Isse mobile ka back button dabane par sirf photo band hogi, app home par nahi jayega
+        history.pushState({modal: "view"}, "");
+        document.getElementById('stockViewModal').style.display = 'flex';
+        
+        // Haptic Feedback (Vibration)
+        if(navigator.vibrate) navigator.vibrate(50);
+    }, 600);
+}
+
+function cancelLongPress() { 
+    clearTimeout(longPressTimer); 
+}
+
 // --- 2. RENDER RECIPES (MODIFIED) ---
 function renderRecipes() {
     let filtered = (currentFilter === 'ALL') ? recipes : recipes.filter(r => r.category === currentFilter);
