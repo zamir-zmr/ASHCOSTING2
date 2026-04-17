@@ -1635,12 +1635,19 @@ function addIng(n, p, b) {
 /* --- CALCULATIONS --- */
 function openEditor(i) {
     activeIdx = i; // --- 1. RENDER STOCK (MODIFIED) ---
+// --- 1. RENDER STOCK (FIXED WITH LONG PRESS EVENTS) ---
 function renderStock() {
     const list = document.getElementById('stockList');
     if(!list) return;
     
     list.innerHTML = stock.map((s, i) => `
-        <div class="draggable-item" style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee;">
+        <div class="draggable-item" 
+             style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; user-select:none; -webkit-user-select:none;"
+             ontouchstart="startLongPress(${i})" 
+             ontouchend="cancelLongPress()" 
+             onmousedown="startLongPress(${i})" 
+             onmouseup="cancelLongPress()">
+             
             <div style="display:flex; align-items:center; flex:1;">
                 <div>
                     <b style="color:#2d3436; display:block;">${s.name}</b>
@@ -1648,41 +1655,143 @@ function renderStock() {
                 </div>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="openInputModal('stock', ${i})"></i>
+                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" 
+                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
             </div>
         </div>`).join('');
 }
 
+// --- 2. LONG PRESS LOGIC ---
+let longPressTimer;
+
 function startLongPress(i) {
-    // 600ms tak daba ke rakhne par popup aayega
+    // Agar pehle se koi timer chal raha ho toh clear karein
+    clearTimeout(longPressTimer);
+    
     longPressTimer = setTimeout(() => {
         let s = stock[i];
         
-        // Modal mein details bharna
-        document.getElementById('stockViewName').innerText = s.name || "No Name";
-        document.getElementById('stockViewPrice').innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
+        // Modal elements check karein
+        const modalName = document.getElementById('stockViewName');
+        const modalPrice = document.getElementById('stockViewPrice');
+        const modalImg = document.getElementById('stockViewImg');
+        const modalOverlay = document.getElementById('stockViewModal');
+
+        if(modalName) modalName.innerText = s.name || "No Name";
+        if(modalPrice) modalPrice.innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
         
-        let img = document.getElementById('stockViewImg');
-        if(s.img) { 
-            img.src = s.img; 
-            img.style.display = 'block'; 
-        } else { 
-            img.style.display = 'none'; 
+        if(modalImg) {
+            if(s.img) { 
+                modalImg.src = s.img; 
+                modalImg.style.display = 'block'; 
+            } else { 
+                modalImg.style.display = 'none'; 
+            }
         }
 
-        // --- BACK BUTTON FIX ---
-        // Isse mobile ka back button dabane par sirf photo band hogi, app home par nahi jayega
-        history.pushState({modal: "view"}, "");
-        document.getElementById('stockViewModal').style.display = 'flex';
+        // --- BACK BUTTON & DISPLAY FIX ---
+        if(modalOverlay) {
+            history.pushState({modal: "view"}, "");
+            modalOverlay.style.display = 'flex';
+        }
         
-        // Haptic Feedback (Vibration)
-        if(navigator.vibrate) navigator.vibrate(50);
-    }, 600);
+        // Vibration feedback
+        if(navigator.vibrate) navigator.vibrate(60);
+        
+    }, 600); // 0.6 second hold time
 }
 
 function cancelLongPress() { 
     clearTimeout(longPressTimer); 
 }
+
+// --- 3. FIREBASE SYNC (In case of edit/save) ---
+function syncStockToCloud() {
+    saveData(); // Local storage
+    if (typeof db !== 'undefined') {
+        db.ref('shared_stock_list').set(stock);
+        console.log("Stock synced to Firebase ✅");
+    }
+}
+// --- 1. RENDER STOCK (FIXED WITH LONG PRESS EVENTS) ---
+function renderStock() {
+    const list = document.getElementById('stockList');
+    if(!list) return;
+    
+    list.innerHTML = stock.map((s, i) => `
+        <div class="draggable-item" 
+             style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; user-select:none; -webkit-user-select:none;"
+             ontouchstart="startLongPress(${i})" 
+             ontouchend="cancelLongPress()" 
+             onmousedown="startLongPress(${i})" 
+             onmouseup="cancelLongPress()">
+             
+            <div style="display:flex; align-items:center; flex:1;">
+                <div>
+                    <b style="color:#2d3436; display:block;">${s.name}</b>
+                    <small style="color:#00b894; font-weight:600;">${(s.price || 0).toFixed(3)} OMR / ${s.base || 1000}g</small>
+                </div>
+            </div>
+            <div style="display:flex; gap:15px; align-items:center;">
+                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" 
+                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
+            </div>
+        </div>`).join('');
+}
+
+// --- 2. LONG PRESS LOGIC ---
+let longPressTimer;
+
+function startLongPress(i) {
+    // Agar pehle se koi timer chal raha ho toh clear karein
+    clearTimeout(longPressTimer);
+    
+    longPressTimer = setTimeout(() => {
+        let s = stock[i];
+        
+        // Modal elements check karein
+        const modalName = document.getElementById('stockViewName');
+        const modalPrice = document.getElementById('stockViewPrice');
+        const modalImg = document.getElementById('stockViewImg');
+        const modalOverlay = document.getElementById('stockViewModal');
+
+        if(modalName) modalName.innerText = s.name || "No Name";
+        if(modalPrice) modalPrice.innerText = (s.price ? s.price.toFixed(3) : "0.000") + " OMR";
+        
+        if(modalImg) {
+            if(s.img) { 
+                modalImg.src = s.img; 
+                modalImg.style.display = 'block'; 
+            } else { 
+                modalImg.style.display = 'none'; 
+            }
+        }
+
+        // --- BACK BUTTON & DISPLAY FIX ---
+        if(modalOverlay) {
+            history.pushState({modal: "view"}, "");
+            modalOverlay.style.display = 'flex';
+        }
+        
+        // Vibration feedback
+        if(navigator.vibrate) navigator.vibrate(60);
+        
+    }, 600); // 0.6 second hold time
+}
+
+function cancelLongPress() { 
+    clearTimeout(longPressTimer); 
+}
+
+// --- 3. FIREBASE SYNC (In case of edit/save) ---
+function syncStockToCloud() {
+    saveData(); // Local storage
+    if (typeof db !== 'undefined') {
+        db.ref('shared_stock_list').set(stock);
+        console.log("Stock synced to Firebase ✅");
+    }
+}
+
 
 // --- 2. RENDER RECIPES (MODIFIED) ---
 function renderRecipes() {
@@ -2657,7 +2766,7 @@ window.addEventListener('click', (e) => {
             <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">
               
               <h2 
-            style="font-size: 10px; font-family: 'Courier New', monospace; color: #0f172a; background: #fff; padding: 4px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">version 4</span>
+            style="font-size: 10px; font-family: 'Courier New', monospace; color: #0f172a; background: #fff; padding: 4px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 700; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);">version 5</span>
             </h2>
             </span>
             
