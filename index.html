@@ -1635,12 +1635,21 @@ function addIng(n, p, b) {
 /* --- CALCULATIONS --- */
 function openEditor(i) {
     activeIdx = i; // --- 1. RENDER STOCK (MODIFIED) ---
+
 function renderStock() {
     const list = document.getElementById('stockList');
     if(!list) return;
     
     list.innerHTML = stock.map((s, i) => `
-        <div class="draggable-item" style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee;">
+        <div class="draggable-item" 
+             style="display:flex; justify-content:space-between; padding:12px; background:white; border-radius:12px; margin-bottom:8px; align-items:center; border:1px solid #eee; user-select:none; -webkit-user-select:none;"
+             ontouchstart="startLongPress(${i})" 
+             ontouchend="cancelLongPress()" 
+             ontouchmove="cancelLongPress()"
+             onmousedown="startLongPress(${i})" 
+             onmouseup="cancelLongPress()"
+             onmouseleave="cancelLongPress()">
+             
             <div style="display:flex; align-items:center; flex:1;">
                 <div>
                     <b style="color:#2d3436; display:block;">${s.name}</b>
@@ -1648,13 +1657,18 @@ function renderStock() {
                 </div>
             </div>
             <div style="display:flex; gap:15px; align-items:center;">
-                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" onclick="openInputModal('stock', ${i})"></i>
+                <i class="fas fa-edit" style="color:#38bdf8; font-size:18px; cursor:pointer;" 
+                   onclick="event.stopPropagation(); openInputModal('stock', ${i})"></i>
             </div>
         </div>`).join('');
 }
 
+let longPressTimer; // Timer variable define karna zaroori hai
+
 function startLongPress(i) {
-    // 600ms tak daba ke rakhne par popup aayega
+    // Purana koi timer chal raha ho toh clear karein taaki double trigger na ho
+    clearTimeout(longPressTimer); 
+    
     longPressTimer = setTimeout(() => {
         let s = stock[i];
         
@@ -1671,7 +1685,6 @@ function startLongPress(i) {
         }
 
         // --- BACK BUTTON FIX ---
-        // Isse mobile ka back button dabane par sirf photo band hogi, app home par nahi jayega
         history.pushState({modal: "view"}, "");
         document.getElementById('stockViewModal').style.display = 'flex';
         
@@ -1683,6 +1696,7 @@ function startLongPress(i) {
 function cancelLongPress() { 
     clearTimeout(longPressTimer); 
 }
+
 
 // --- 2. RENDER RECIPES (MODIFIED) ---
 function renderRecipes() {
