@@ -1097,14 +1097,27 @@ DATA</button>
         </div>
     </div>
 
-    <div id="stockViewModal" class="modal-overlay">
-        <div class="input-modal" style="text-align:center;">
-            <img id="stockViewImg" style="width:100%; border-radius:15px; margin-bottom:15px;">
-            <h2 id="stockViewName" style="margin:0;"></h2>
-            <h3 id="stockViewPrice" style="color:var(--accent); margin-bottom:20px;"></h3>
-            <button class="btn-pill" style="width:100%; background:#eee;" onclick="smartClose()">CLOSE</button>
+<div id="stockViewModal" class="modal-overlay" onclick="if(event.target === this) smartClose()">
+    <div class="input-modal" style="text-align:center; max-height: 90vh; overflow-y: auto; padding: 20px;">
+        
+        <div style="background: #f8f9fa; border-radius: 15px; overflow: hidden; margin-bottom: 15px;">
+            <img id="stockViewImg" 
+                 style="width:100%; display: block; object-fit: cover;" 
+                 onerror="this.src='https://via.placeholder.com/300?text=No+Image+Available'">
         </div>
+
+        <h2 id="stockViewName" style="margin:0; font-size: 20px; color: #2d3436;"></h2>
+        
+        <h3 id="stockViewPrice" style="color:var(--accent); margin: 10px 0 20px 0; font-size: 18px;"></h3>
+
+        <button class="btn-pill" 
+                style="width:100%; background:#f1f2f6; border: none; padding: 12px; font-weight: 600; cursor: pointer; border-radius: 12px;" 
+                onclick="smartClose()">
+            CLOSE
+        </button>
     </div>
+</div>
+
     <script>
 // Data load aur default values fix
 
