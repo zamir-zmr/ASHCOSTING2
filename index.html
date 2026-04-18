@@ -1797,15 +1797,49 @@ function showSuggest(q) {
     document.getElementById('suggestions').innerHTML = fits.map(f => {
         let b = f.base || 1000; 
         
+        // onclick="addIng(...)" ko hum yahan handle karenge
         return `
             <div style="padding:12px; border-bottom:1px solid #eee; font-weight:bold; cursor:pointer;" 
-                 onclick="addIng('${f.name}', ${f.price}, ${b})"> 
+                 onclick="addIng('${f.name.replace(/'/g, "\\'")}', ${f.price}, ${b})"> 
                 ${f.name} 
                 <span style="float:right; color:var(--primary)">
-                    ${f.price.toFixed(3)} OMR / ${b} G
+                    ${f.price.toFixed(3)} OMR / ${b}g
                 </span>
             </div>`;
     }).join('');
+}
+
+// --- YE FUNCTION MISSING THA ---
+function addIng(name, price, base) {
+    if (activeIdx === null || !recipes[activeIdx]) {
+        showToast("Please open a recipe first!", true);
+        return;
+    }
+
+    // 1. Recipe ke andar item push karein
+    if (!recipes[activeIdx].items) recipes[activeIdx].items = [];
+    
+    recipes[activeIdx].items.push({
+        name: name,
+        price: parseFloat(price) || 0,
+        base: parseFloat(base) || 1000,
+        used: 0 // Shuruat mein 0 rahega
+    });
+
+    // 2. Input saaf karein aur suggestions band karein
+    const sInp = document.querySelector('input[oninput*="showSuggest"]');
+    if(sInp) sInp.value = '';
+    document.getElementById('suggestions').innerHTML = '';
+
+    // 3. FIREBASE & LOCAL SYNC
+    saveData(); 
+    if (typeof db !== 'undefined') {
+        db.ref('shared_recipes_list').set(recipes);
+    }
+
+    // 4. UI UPDATE
+    renderTable(); 
+    showToast("Added: " + name);
 }
 
 
