@@ -1154,41 +1154,16 @@ if (!deviceId) {
 
 Lock();
 
-// --- Share Panel Update (Device ID Dikhane ke liye) ---
-
-function openSmartShare() {
-    // 1. Ek history entry push karein taaki back dabane par panel band ho
-    window.history.pushState({ panel: 'open' }, 'Panel', window.location.pathname);
-    
-    document.getElementById('sharePanel').style.display = 'flex';
-    
-    // Baki aapka purana HTML code niche...
-    let html = '';
-    html += `<div class="share-section-title" style="background:#eef2f7; padding:5px 10px; font-size:11px; font-weight:bold; border-radius:5px; margin-bottom:5px;">📦 STOCK ITEMS</div>`;
-    stock.forEach((s, i) => {
-        html += `<div class="share-item-row">
-            <input type="checkbox" class="share-chk" data-type="stock" data-idx="${i}">
-            <span class="share-badge" style="background:#54A0FF">ITEM</span>
-            <span style="font-size:13px;">${s.name}</span>
-        </div>`;
-    });
-    // ... baaki loop code ...
-    document.getElementById('shareItemsList').innerHTML = html;
-}
 
 
-
-// --- 1. SEARCH FUNCTIONS ---
-
-// 1. Search Panel Open Function
 // 1. Search Panel Open Function (Same as yours)
 // 1. Everything Search Panel ko kholne ka function
 function openEverythingSearch() {
+    history.pushState({ panel: 'searchPanel' }, "");
     document.getElementById('searchPanel').style.display = 'flex';
     document.getElementById('mainContainer').style.display = 'none'; 
     document.getElementById('everythingInput').value = "";
     document.getElementById('everythingInput').focus();
-    // Default message jab search box khali ho
     document.getElementById('searchResults').innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Start typing to search stock...</p>';
 }
 
@@ -1430,18 +1405,11 @@ DATA</button>
         <button class="btn-pill btn-manage" id="mBtn" style="margin-left:5px;" onclick="toggleManage()">MANAGE</button>
     </div>
 
-    <div class="h-btns" style="gap: 5px;">
-        <button class="btn-pill" style="background:#fff; color:var(--accent);" onclick="openPanel('catPanel')">CATEGORY</button>
-        <button class="btn-pill btn-stock" onclick="openPanel('stockPanel')">STOCK</button>
-        
-        <div class="h-btns">
-    <button class="btn-pill" style="background: #10b981; color: white;" onclick="openEverythingSearch()">
-        <i class="fas fa-search"></i> EVERYTHING
-    </button>
-</div>
-
-        
-        <button class="btn-pill" style="background:#fff; color:var(--accent);" onclick="openInputModal('recipe')">Add Recipe</button>
+    <div class="h-btns" style="gap: 4px; flex-wrap: nowrap;">
+        <button class="btn-pill" style="background:#fff; color:var(--accent); padding:6px 8px; font-size:9px;" onclick="openPanel('catPanel')">CAT</button>
+        <button class="btn-pill btn-stock" style="padding:6px 8px; font-size:9px;" onclick="openPanel('stockPanel')">STOCK</button>
+        <button class="btn-pill" style="background:#10b981; color:white; padding:6px 8px; font-size:9px;" onclick="openEverythingSearch()">🔍</button>
+        <button class="btn-pill" style="background:#7d5fff; color:white; padding:6px 10px; font-size:9px; font-weight:800;" onclick="openInputModal('recipe')">+RCP</button>
     </div>
 </div>
 
@@ -1533,16 +1501,15 @@ DATA</button>
 
 
 <div id="stockPanel" class="panel">
-    <div class="panel-nav" style="
-    padding: 5px;
-        padding-right: 30px;
-        margin-left: 15px;
-    
-    
-    ">
-        STOCK MATERIALS 
-        <span onclick="closePanel('stockPanel')" style="cursor:pointer; padding:5px;">✕</span>
-    </div>
+<div style="background: #abf5fb; 
+   border-radius: 80px; border: 1px solid #cbd5e1;
+   padding: 10px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+   margin: 5px 5px 8px 5px;
+   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+   display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="padding:0; margin:0; color: #1e293b; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">STOCK MATERIALS</h2>
+        <span style="font-size:24px; font-weight:bold; color:#000; cursor:pointer;" onclick="closePanel('stockPanel')">✕</span>
+        </div>
     
     <div style="padding: 5px 15px 0 15px;">
         <div style="position: relative; display: flex; align-items: center;">
@@ -1563,7 +1530,15 @@ DATA</button>
 </div>
 
 <div id="catPanel" class="panel">
-    <div class="panel-nav">MANAGE CATEGORIES <span onclick="closePanel('catPanel')">✕</span></div>
+<div style="background: #abf5fb; 
+   border-radius: 80px; border: 1px solid #cbd5e1;
+   padding: 10px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+   margin: 5px 5px 8px 5px;
+   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+   display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="padding:0; margin:0; color: #1e293b; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">MANAGE CATEGORIES</h2>
+        <span style="font-size:24px; font-weight:bold; color:#000; cursor:pointer;" onclick="closePanel('catPanel')">✕</span>
+        </div>
     
     <div style="padding:15px; background:white; border-bottom:1px solid #eee;">
         <div style="display:flex; gap:10px;">
@@ -1582,10 +1557,15 @@ DATA</button>
 
     <div id="editorPanel" class="panel">
       
-    <div class="panel-nav">
-        <span id="activeTitle"></span> 
-        <span onclick="saveAndExit()">✕</span>  
-    </div>
+    <div style="background: #abf5fb; 
+   border-radius: 80px; border: 1px solid #cbd5e1;
+   padding: 10px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+   margin: 5px 5px 8px 5px;
+   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+   display: flex; align-items: center; justify-content: space-between;">
+        <h2 id="activeTitle" style="padding:0; margin:0; color: #1e293b; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;"></h2>
+        <span style="font-size:24px; font-weight:bold; color:#000; cursor:pointer;" onclick="saveAndExit()">✕</span>
+        </div>
     
     <div style="padding: 0px 0 0px 0 0px;">
         <input type="text" placeholder="🔍 Search stock..." oninput="showSuggest(this.value)" style="margin-bottom:0;">
@@ -1981,43 +1961,7 @@ function toggleManage() {
 
 // 2. Panel Functions - History support ke saath
 
-// --- 1. MODAL & PANEL LOGIC ---
-window.onpopstate = function(event) {
-    // 1. Saare open panels aur overlays ko band karein
-    document.querySelectorAll('.panel, .modal-overlay, .image-cropper-container').forEach(el => {
-        el.style.display = 'none';
-    });
-    
-    // 2. Manage mode reset logic
-    isManage = false;
-    const b = document.getElementById('mBtn');
-    if(b) { 
-        b.innerText = "MANAGE"; 
-        b.classList.remove('active'); 
-    }
-    
-    const homeCont = document.getElementById('homeCont');
-    if(homeCont) {
-        homeCont.classList.remove('manage-mode');
-    }
-
-    // 3. Agar piche koi panel ki history hai, toh use dikhayein
-    if (event.state && event.state.panel) {
-        let panel = document.getElementById(event.state.panel);
-        if(panel) {
-            panel.style.display = 'flex';
-            if(homeCont) homeCont.style.display = 'none';
-        }
-    } 
-    else {
-        // 4. FIX: Agar event.state null hai, iska matlab hum HOME par hain
-        if(homeCont) homeCont.style.display = 'block';
-        
-        // Sabse important line: History ko poori tarah saaf kar dein
-        // Taaki ab user back dabaye toh App Exit ho jaye
-        history.replaceState(null, "");
-    }
-};
+// --- 1. MODAL & PANEL LOGIC --- (onpopstate is at bottom)
 
 
 function openPanel(id) { 
@@ -2030,12 +1974,20 @@ function openPanel(id) {
     if(homeCont) homeCont.style.display = 'none';
 }
 
-function closePanel(id) { 
-    history.back();
+function closePanel(id) {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+    goHome();
 }
 
-function smartClose() { 
-    history.back();
+function smartClose() {
+    document.querySelectorAll('.panel, .modal-overlay').forEach(el => {
+        if(el.style.display === 'flex') el.style.display = 'none';
+    });
+    const mc = document.getElementById('mainContainer');
+    if(mc) mc.style.display = 'block';
+    const h = document.getElementById('homeCont');
+    if(h) h.style.display = 'block';
 }
 // --- 2. INPUT MODAL LOGIC ---
 
@@ -2165,7 +2117,7 @@ function submitInputModal() {
     renderRecipes();
     
     document.getElementById('inputModalOverlay').style.display = 'none';
-    if(window.history.state && window.history.state.modal) history.back();
+    // modal direct close
 
     // Agar Everything Search se aaye the to wapas lo
     setTimeout(() => returnToEverythingSearch(), 150);
@@ -2404,8 +2356,8 @@ function showRecipeItems(idx) {
     `;
     
     document.body.appendChild(overlay);
-    document.getElementById('closeBtnIcon').onclick = () => history.back();
-    document.getElementById('closeBtnBottom').onclick = () => history.back();
+    document.getElementById('closeBtnIcon').onclick = closeOverlay;
+    document.getElementById('closeBtnBottom').onclick = closeOverlay;
 }
 
 // --- 3. SUPER FAST NOTIFICATION (Toast Logic) ---
@@ -3525,7 +3477,28 @@ function showImportSummary(log) {
     document.body.insertAdjacentHTML('beforeend', popup);
 }
 
-// ✅ FINAL OVERRIDE - Yeh sab pehle wale functions ko replace karega
+
+
+
+// ✅ BACK BUTTON FIX
+// Double entry trick: home + guard, taaki back press app band na kare
+history.replaceState({ home: true }, "");
+history.pushState({ guard: true }, "");
+
+function goHome() {
+    document.querySelectorAll('.panel, .modal-overlay, #sharePanel').forEach(el => el.style.display = 'none');
+    window.fromEverythingSearch = false;
+    window.lastSearchQuery = '';
+    isManage = false;
+    const b = document.getElementById('mBtn');
+    if(b) { b.innerText = "MANAGE"; b.classList.remove('active'); }
+    const h = document.getElementById('homeCont');
+    if(h) { h.classList.remove('manage-mode'); h.style.display = 'block'; }
+    // Guard wapas push karo taaki agli back press par bhi app band na ho
+    history.pushState({ guard: true }, "");
+}
+
+// ✅ FINAL OVERRIDE
 function openPanel(id) { 
     history.pushState({ panel: id }, ""); 
     document.querySelectorAll('.panel, .modal-overlay, #sharePanel').forEach(el => el.style.display = 'none');
@@ -3538,20 +3511,24 @@ function openSharePanel() {
     document.getElementById('sharePanel').style.display = 'flex';
     openSmartShare();
 }
-function closePanel(id) { history.back(); }
-function smartClose() { history.back(); }
+function closePanel(id) {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+    goHome();
+}
+function smartClose() {
+    document.querySelectorAll('.panel, .modal-overlay').forEach(el => {
+        if(el.style.display === 'flex') el.style.display = 'none';
+    });
+    const mc = document.getElementById('mainContainer');
+    if(mc) mc.style.display = 'block';
+    const h = document.getElementById('homeCont');
+    if(h) h.style.display = 'block';
+}
 
 window.onpopstate = function(event) {
-    document.querySelectorAll('.panel, .modal-overlay, #sharePanel').forEach(el => el.style.display = 'none');
-    isManage = false;
-    const b = document.getElementById('mBtn');
-    if(b) { b.innerText = "MANAGE"; b.classList.remove('active'); }
-    const h = document.getElementById('homeCont');
-    if(h) { h.classList.remove('manage-mode'); h.style.display = 'block'; }
-    if(event.state && event.state.panel) {
-        const p = document.getElementById(event.state.panel);
-        if(p) { p.style.display = 'flex'; if(h) h.style.display = 'none'; }
-    }
+    // Hamesha home dikhao - app kabhi band nahi hoga
+    goHome();
 };
 
 <!-- i phone effect after long press card
@@ -3609,21 +3586,32 @@ window.addEventListener('click', (e) => {
 
 
 <div id="sharePanel" class="share-panel" style="font-family: 'Segoe UI', Roboto, sans-serif;">
-    <div class="share-box" style="background: #bef1f5; border-radius: 24px; padding: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #f0f0f0;">
-      
-      
+    <div class="share-box" style="background: #bef1f5; border-radius: 24px; padding: 0px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid #f0f0f0; display: flex; flex-direction: column; max-height: 100vh;">
 
-   <div class="share" style="background: #abf5fb; border-radius: 15px; padding: 10px; box-shadow: 0 20px 20px rgba(0,0,0,0.15); 
-   margin-bottom : 5px;
-   border: 2.5px solid #f0f0f0;">
+   <!-- STICKY DATA HEADER -->
+   <div class="share" style="background: #abf5fb; 
+   
+   border-radius: 80px; border: 1px solid #cbd5e1;
+   
+   padding: 10px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+   margin-bottom: 0px;
+   margin-left : 5px;
+   margin-right : 5px;
+   margin-top :5px;
 
-        <span style="position:absolute; right:40px; top:30px; font-size:24px; font-weight:bold; color:#000000; cursor:pointer; transition: 0.3s;" onclick="document.getElementById('sharePanel').style.display='none'">✕</span>
+   border: 2.5px solid #f0f0f0;
+   position: sticky; top: 0; z-index: 100; flex-shrink: 0;">
+
+        <span style="position:absolute; right:20px; top:50%; transform:translateY(-50%); font-size:24px; font-weight:bold; color:#000000; cursor:pointer; transition: 0.3s;" onclick="document.getElementById('sharePanel').style.display='none'">✕</span>
         
         <h2 style="padding:0px; 
         margin-bottom : 1px;
         margin-top : 5px;
         color: #1e293b; font-size: 20px; font-weight: 800; letter-spacing: 1px;">DATA</h2>
         </div>
+
+   <!-- SCROLLABLE CONTENT -->
+   <div style="overflow-y: auto; flex: 1; padding: 15px 20px; padding-bottom: 20px;">
         
                 <div style="background: #f8fafc; padding: 5px 5px; border-radius: 14px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #e2e8f0;">
           
@@ -3716,16 +3704,20 @@ window.addEventListener('click', (e) => {
                 <i class="fas fa-file-import"></i> ADD TO APP
             </button>
         </div>
+        </div><!-- end scrollable content -->
     </div>
-</div>
-
 </div>
 
 <div id="searchPanel" class="panel">
-    <div class="panel-nav">
-        <span>EVERYTHING SEARCH</span>
-        <button class="btn-pill" onclick="closeEverythingSearch()" style="background:var(--danger); color:white;">CLOSE</button>
-    </div>
+<div style="background: #abf5fb; 
+   border-radius: 80px; border: 1px solid #cbd5e1;
+   padding: 10px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+   margin: 5px 5px 8px 5px;
+   position: sticky; top: 0; z-index: 100; flex-shrink: 0;
+   display: flex; align-items: center; justify-content: space-between;">
+        <h2 style="padding:0; margin:0; color: #1e293b; font-size: 18px; font-weight: 800; letter-spacing: 0.5px;">EVERYTHING SEARCH</h2>
+        <span style="font-size:24px; font-weight:bold; color:#000; cursor:pointer;" onclick="closeEverythingSearch()">✕</span>
+        </div>
     <div style="padding: 15px;">
         <input type="text" id="everythingInput" placeholder="Search Recipe, Stock or Category..." oninput="doEverythingSearch()" style="border: 2px solid var(--primary); border-radius: 50px; padding: 15px;">
     </div>
