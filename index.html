@@ -1192,6 +1192,7 @@ function openEverythingSearch() {
     document.getElementById('searchResults').innerHTML = '<p style="text-align:center; color:#94a3b8; padding:20px;">Start typing to search stock...</p>';
 }
 
+
 function doEverythingSearch() {
     let query = document.getElementById('everythingInput').value.toLowerCase();
     let resultsDiv = document.getElementById('searchResults');
@@ -1314,24 +1315,52 @@ function doEverythingSearch() {
 
 // Search panel se directly edit modal kholne ka function
 function openEditFromSearch(idx, type) {
-    // 1. Search panel seedha hide karo
+    window.fromEverythingSearch = true;
+    window.lastSearchQuery = document.getElementById('everythingInput').value;
+
     document.getElementById('searchPanel').style.display = 'none';
-    
-    // 2. Home container dikhao
     const homeCont = document.getElementById('homeCont');
     if (homeCont) homeCont.style.display = 'block';
     
-    // 3. Thoda wait karke sahi modal kholo
     setTimeout(() => {
         if (type === 'recipe') {
-            openEditor(idx);
+            openInputModal(type, idx);
         } else if (type === 'category') {
-            openPanel('catPanel');       // Category panel kholo
-            setTimeout(() => editCategory(idx), 200); // Phir rename modal
+            openPanel('catPanel');
+            setTimeout(() => editCategory(idx), 200);
         } else {
             openInputModal('stock', idx);
         }
     }, 100);
+}
+
+function returnToEverythingSearch() {
+    if (!window.fromEverythingSearch) return false;
+    window.fromEverythingSearch = false;
+    document.getElementById('searchPanel').style.display = 'flex';
+    const homeCont = document.getElementById('homeCont');
+    if (homeCont) homeCont.style.display = 'none';
+    const inp = document.getElementById('everythingInput');
+    if (inp && window.lastSearchQuery) {
+        inp.value = window.lastSearchQuery;
+        doEverythingSearch();
+    }
+    return true;
+}
+
+function handleBackFromModal() {
+    document.getElementById('inputModalOverlay').style.display = 'none';
+    if (!returnToEverythingSearch()) {
+        smartClose();
+    }
+}
+
+function closeEverythingSearch() {
+    document.getElementById('searchPanel').style.display = 'none';
+    const homeCont = document.getElementById('homeCont');
+    if (homeCont) homeCont.style.display = 'block';
+    window.fromEverythingSearch = false;
+    window.lastSearchQuery = '';
 }
 
 
@@ -1495,7 +1524,7 @@ DATA</button>
         <button id="delBtnInModal" class="btn-pill" style="width:100%; background:var(--danger); color:white; margin-bottom:10px; display:none;" onclick="handleDeleteAction()">DELETE PERMANENTLY</button>
         
         <div style="display:flex; gap:10px;">
-            <button class="btn-pill" style="flex:1; background:#f1f5f9;" onclick="smartClose()">BACK</button>
+            <button class="btn-pill" style="flex:1; background:#f1f5f9;" onclick="handleBackFromModal()">BACK</button>
             <button class="btn-pill" style="flex:1; background:var(--primary); color:white;" onclick="submitInputModal()">SAVE</button>
         </div>
     </div>
@@ -1859,7 +1888,11 @@ function editCategory(i) {
         onYes: (newName) => {
             let finalName = newName ? newName.trim() : "";
             
-            if (!finalName || finalName === oldName) return;
+            if (!finalName || finalName === oldName) {
+                // Koi change nahi, wapas search par
+                closeCatPanelAndReturn();
+                return;
+            }
 
             let exists = cats.find((c, idx) => c.toLowerCase() === finalName.toLowerCase() && idx !== i);
             if(exists) {
@@ -1868,12 +1901,10 @@ function editCategory(i) {
                 return; 
             }
 
-            // Sabhi recipes mein category name update karein
             recipes.forEach(r => { if (r.category === oldName) r.category = finalName; });
             cats[i] = finalName; 
             
-            // --- SYNC FIX ---
-            syncCatsToCloud(); // Rename hote hi Madam ke phone par bhi update hoga
+            syncCatsToCloud();
             if (typeof db !== 'undefined') {
                 db.ref('shared_recipes_list').set(recipes);
             }
@@ -1881,8 +1912,28 @@ function editCategory(i) {
             renderCatFilters(); 
             renderRecipes();
             showToast("Category Updated & Synced!");
+            // OK ke baad wapas search
+            closeCatPanelAndReturn();
         }
     });
+
+    // CANCEL button ke liye — confirmOverlay close hone par wapas search
+    const cancelBtn = document.querySelector('#confirmOverlay button:first-child');
+    if (cancelBtn) {
+        const origOnclick = cancelBtn.onclick;
+        cancelBtn.onclick = function() {
+            if (origOnclick) origOnclick.call(this);
+            closeCatPanelAndReturn();
+        };
+    }
+}
+
+function closeCatPanelAndReturn() {
+    // Agar Everything Search se aaye the
+    if (window.fromEverythingSearch) {
+        document.getElementById('catPanel').style.display = 'none';
+        setTimeout(() => returnToEverythingSearch(), 100);
+    }
 }
 
 // Function for deleting (Aapne deleteCat manga tha pichle message mein)
@@ -2110,11 +2161,14 @@ function submitInputModal() {
     if(sInput) sInput.value = ""; 
 
     saveData();     
-    renderStock(); // Ab ye photo ke sath dikhayega
+    renderStock();
     renderRecipes();
     
     document.getElementById('inputModalOverlay').style.display = 'none';
     if(window.history.state && window.history.state.modal) history.back();
+
+    // Agar Everything Search se aaye the to wapas lo
+    setTimeout(() => returnToEverythingSearch(), 150);
 }
 
 
@@ -2886,13 +2940,16 @@ function closeConfirm(isYes) {
     const inputVal = document.getElementById('confirmInput').value;
 
     if(isYes && typeof confirmCallback === 'function') {
-        // Agar OK dabaya, toh delete ya rename function chalao
         confirmCallback(inputVal); 
     }
 
-    // Modal band karo aur callback khali karo
     overlay.style.display = 'none';
     confirmCallback = null;
+
+    // Agar CANCEL dabaya aur category search se aaye the
+    if (!isYes) {
+        closeCatPanelAndReturn();
+    }
 }
 
 // 3. OK Button ko JavaScript se connect karna (Ye line miss mat karna)
@@ -2931,7 +2988,8 @@ function handleDeleteAction() {
                 
                 // UI Close
                 document.getElementById('inputModalOverlay').style.display = 'none';
-                smartClose(); 
+                smartClose();
+                setTimeout(() => returnToEverythingSearch(), 150);
                 
                 // Specific Toast for Recipe
                 showToast(`${recipeName} Recipe Deleted & Synced`);
@@ -2962,7 +3020,8 @@ function handleDeleteAction() {
                 
                 // UI Close
                 document.getElementById('inputModalOverlay').style.display = 'none';
-                smartClose(); 
+                smartClose();
+                setTimeout(() => returnToEverythingSearch(), 150);
                 
                 // Specific Toast for Stock
                 showToast(`${stockName} Deleted from Stock & Synced`);
@@ -3665,7 +3724,7 @@ window.addEventListener('click', (e) => {
 <div id="searchPanel" class="panel">
     <div class="panel-nav">
         <span>EVERYTHING SEARCH</span>
-        <button class="btn-pill" onclick="closePanel('searchPanel')" style="background:var(--danger); color:white;">CLOSE</button>
+        <button class="btn-pill" onclick="closeEverythingSearch()" style="background:var(--danger); color:white;">CLOSE</button>
     </div>
     <div style="padding: 15px;">
         <input type="text" id="everythingInput" placeholder="Search Recipe, Stock or Category..." oninput="doEverythingSearch()" style="border: 2px solid var(--primary); border-radius: 50px; padding: 15px;">
