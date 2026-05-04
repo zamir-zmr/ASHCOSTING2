@@ -264,7 +264,7 @@
             position: relative; overflow: hidden; display: flex; 
             flex-direction: column; border: 2px solid #11f7ed; 
         }
-        .card-img-box { width: 100%; height: 100px; position: relative; background: #ffffff; overflow: hidden; }
+        .card-img-box { width: 100%; height: 140px; position: relative; background: #ffffff; overflow: hidden; }
         .card-img-box img { width: 100%; height: 100%; object-fit: cover; }
         .card-info { padding: 5px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; }
         .card b { color: #2D3436; font-size: 11px; text-transform: uppercase; text-align: center; }
@@ -710,27 +710,24 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 8px; /* Gap kam kiya */
     padding: 8px;
+    margin-bottom: 45px;
 }
 
 /* --- List View Mode (Active) --- */
-/* List View Active (With 50px Margin Bottom) */
 .list-view-active {
     display: flex !important;
     flex-direction: column !important;
-    gap: 0 !important; /* Gap remove, margin use karenge */
-    padding: 5px !important;
+    gap: 6px !important; /* Items ke beech ka gap kam kiya */
+    padding: 8px !important;
+    animation: fadeIn 0.4s ease;
 }
 
 .list-view-active .card {
-    flex-direction: row !important;
-    height: 70px !important;
-    margin-top: 0 !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-    margin-bottom: 500px !important; /* 👇 AAPNE YAHAN CHANGE MANGA THA 👇 */
+    flex-direction: row !important; /* Image left, Text right */
+    height: 70px !important; /* List card ki height kam ki */
     align-items: center;
+    padding: 0 8px;
 }
-
 
 .list-view-active .card-img-box {
     width: 60px !important; /* Image box size kam kiya */
@@ -916,7 +913,12 @@
     padding: 5px !important;
 }
 
-
+.list-view-active .card {
+    flex-direction: row !important;
+    height: 70px !important;
+    margin: 1px 0 !important; /* Top/Bottom margin 1px */
+    align-items: center;
+}
 /* Cards: Ultra Professional Single Entry */
 
 
@@ -2034,18 +2036,20 @@ function toggleSearch() {
 }
 
 function handleSearch(val) {
-    searchQuery = val.toLowerCase();
-    // Jab search ho raha ho, tab animation band rahega
+    // .trim() use karne se "Chewy Cookies " ka extra space hat jayega
+    searchQuery = val.toLowerCase().trim();
+    
+    // Jab search ho raha ho (query length > 0), tab animation band rahega
     isSearchActive = (searchQuery.length > 0); 
+    
     renderRecipes();
 }
 
-
-
 function renderRecipes() {
-    // 1. Unified Filter
+    // 1. Unified Filter with Trimmed Search
     let filtered = recipes.filter(r => {
         const matchesCategory = (currentFilter === 'ALL' || r.category === currentFilter);
+        // searchQuery ab trimmed hai, isliye matching perfect hogi
         const matchesSearch = r.name.toLowerCase().includes(searchQuery);
         return matchesCategory && matchesSearch;
     });
@@ -2093,7 +2097,6 @@ function renderRecipes() {
         </div>`;
     }).join('');
 }
-
 
 
 
@@ -3410,11 +3413,11 @@ document.addEventListener('click', function(e) {
             <button id="btn-all" onclick="toggleAllShare()" style="flex: 1; padding: 12px; border: none; border-radius: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; font-weight: 600; font-size: 11px; cursor: pointer; box-shadow: 0 4px 6px -1px rgba(217, 119, 6, 0.3);">SELECT ALL</button>
         </div>
         
-<!--          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <div style="display: flex; gap: 10px; margin-bottom: 10px;">
    
    <button class="btn-blue" style="flex:1; background:#2ecc71;" onclick="downloadJSONFile()">📥 DOWNLOAD JSON</button>
 </div>
- -->
+
 
         <div style="margin-top:0px; border: 2px dashed #0bd2ff; padding: 15px; border-radius: 18px; text-align: center; background: #f1f5f9; transition: 0.3s;">
             <i class="fas fa-cloud-upload-alt" style="color: #06b6d4; font-size: 20px; margin-bottom: 0px;"></i>
